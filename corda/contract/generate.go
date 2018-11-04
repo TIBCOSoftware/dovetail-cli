@@ -85,6 +85,8 @@ func (g *Generator) Generate() error {
 		return fmt.Errorf("prepareContractStateData err %v", err)
 	}
 
+	//use the asset name as Contract name if there is only one asset
+	//otherwise use the model file name
 	contractName := ""
 	if len(data.States) == 1 {
 		contractName = data.States[0].Class

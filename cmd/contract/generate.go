@@ -15,6 +15,7 @@ import (
 	"github.com/TIBCOSoftware/dovetail-cli/config"
 	corda "github.com/TIBCOSoftware/dovetail-cli/corda/contract"
 	fabric "github.com/TIBCOSoftware/dovetail-cli/hyperledger-fabric/contract"
+	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
 	"github.com/spf13/cobra"
 )
@@ -57,6 +58,12 @@ var generateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		modelfile, err = contractCmd.PersistentFlags().GetString("modelfile")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		err = validateModelFile(modelfile)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -144,4 +151,17 @@ func createCordaGenerator() (contract.Generator, error) {
 	options := corda.NewOptions(modelfile, smversion, cordaState, cmds, target, cordaNS)
 	cordaGen := corda.NewGenerator(options)
 	return cordaGen, nil
+}
+
+func validateModelFile(modelfile string) error {
+	appConfig, err := model.ParseApp(modelfile)
+	if err != nil {
+		return err
+	}
+
+	if len(appConfig.Triggers) == 0 || len(appConfig.Triggers) > 1 {
+		return fmt.Errorf("There must be one and only one trigger defined in smart contract application")
+	}
+
+	return nil
 }

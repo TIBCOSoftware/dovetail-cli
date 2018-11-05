@@ -7,7 +7,6 @@ package contract
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -19,6 +18,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
 	wgutil "github.com/TIBCOSoftware/dovetail-cli/util"
 	"github.com/TIBCOSoftware/flogo-contrib/action/flow/definition"
@@ -69,7 +69,7 @@ func NewGenOptions(targetPath, modelFile, version string, enableSecurity bool) *
 func (d *Generator) Generate() error {
 	logger.Println("Generating Hyperledger Fabric smart contract...")
 
-	appConfig, err := parseApp(d.Opts.ModelFile)
+	appConfig, err := model.ParseApp(d.Opts.ModelFile)
 	if err != nil {
 		return err
 	}
@@ -79,10 +79,6 @@ func (d *Generator) Generate() error {
 	activities, triggers, err := getAppResources(appConfig)
 	if err != nil {
 		return err
-	}
-
-	if len(triggers) == 0 || len(triggers) > 1 {
-		return fmt.Errorf("There must be one and only one trigger defined in smart contract application")
 	}
 
 	err = wgutil.CopyFile(d.Opts.ModelFile, target+"/"+appConfig.Name+".json")
@@ -305,23 +301,6 @@ func copyResourceFiles(rslibpath, target string, activities, triggers map[string
 		}
 	}
 	return nil
-}
-
-func parseApp(modelfile string) (*app.Config, error) {
-	appCfg := &app.Config{}
-
-	flowjson, err := ioutil.ReadFile(modelfile)
-	if err != nil {
-		return appCfg, err
-	}
-
-	jsonParser := json.NewDecoder(bytes.NewReader(flowjson))
-	err = jsonParser.Decode(&appCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return appCfg, nil
 }
 
 func getAppResources(appConfig *app.Config) (activities, triggers map[string]ResourceRef, err error) {

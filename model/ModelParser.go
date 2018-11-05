@@ -45,15 +45,7 @@ func ParseResourceModel(jsonResource string) *ResourceMetadataModel {
 }
 
 func ParseFlowApp(jsonFile string) (*ModelResources, error) {
-	appCfg := &app.Config{}
-
-	contents, err := ioutil.ReadFile(jsonFile)
-	if err != nil {
-		return nil, err
-	}
-
-	jsonParser := json.NewDecoder(bytes.NewReader(contents))
-	err = jsonParser.Decode(&appCfg)
+	appCfg, err := ParseApp(jsonFile)
 	if err != nil {
 		return nil, err
 	}
@@ -70,4 +62,21 @@ func ParseFlowApp(jsonFile string) (*ModelResources, error) {
 		model.Schemas[value[0]] = value[1]
 	}
 	return &model, nil
+}
+
+func ParseApp(modelfile string) (*app.Config, error) {
+	appCfg := &app.Config{}
+
+	flowjson, err := ioutil.ReadFile(modelfile)
+	if err != nil {
+		return appCfg, err
+	}
+
+	jsonParser := json.NewDecoder(bytes.NewReader(flowjson))
+	err = jsonParser.Decode(&appCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return appCfg, nil
 }

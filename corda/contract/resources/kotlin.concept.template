@@ -1,0 +1,64 @@
+package {{.NS}}
+
+import net.corda.core.serialization.CordaSerializable
+import net.corda.core.identity.AbstractParty
+import java.util.Currency
+
+@CordaSerializable
+{{define "AttrDecl" }}var {{ .Name }}: {{ $| GetKotlinType}}{{if eq .IsOptional true}}?{{end}}{{end}}
+open class {{.Class}}({{range $i, $attr := .Attributes}}{{if ne $i 0}}{{","}}{{end}}{{template "AttrDecl" $attr}}{{end}}) {
+    
+    override fun toString() : String{
+         var json:String = "{"
+         {{range $attr := .Attributes}}
+         {{if eq $attr.IsOptional false}}
+         json = json + {{ $attr| ToKotlinString }} + ","
+         {{else}}
+         if({{$attr.Name}} != null{{if $attr.IsArray}} && {{$attr.Name}}!!.isNotEmpty(){{end}}){
+            json = json + {{ $attr | ToKotlinString }} + ","
+         }
+         {{end}}{{end}}
+         json = json.dropLast(1)
+         json = json + "}"
+         return json
+    }
+
+   override fun equals(other: Any?): Boolean  {
+         if(other is {{.Class}}) {
+            val to = other as ({{.Class}})
+            var isEqual: Boolean = true
+        {{range $i, $attr := .Attributes}}
+            {{if eq .IsOptional true}}
+            if({{$attr.Name}} == null && to.{{$attr.Name}} == null)
+                isEqual = true
+            else if(({{$attr.Name}} == null && to.{{$attr.Name}} != null) || ({{$attr.Name}} != null && to.{{$attr.Name}} == null))
+                return false
+            else {
+                {{if eq $attr.IsArray true}}
+                if(!{{$attr.Name}}!!.containsAll(to.{{.Name}} as Collection<{{ $attr| GetKotlinTypeNoArray}}>))
+                    return false
+                {{else}}
+                if (!{{$attr.Name}}!!.equals(to.{{.Name}}))
+                    return false
+                {{end}}
+                else 
+                    isEqual = true
+            }
+            {{else}}
+                {{if eq $attr.IsArray true}}
+                if(!{{$attr.Name}}!!.containsAll(to.{{$attr.Name}} as Collection<{{ $attr| GetKotlinTypeNoArray}}>))
+                    return false
+                {{else}}
+                if (!{{$attr.Name}}!!.equals(to.{{.Name}}))
+                    return false
+                {{end}}
+                else 
+                    isEqual = true
+            {{end}}
+        {{end}}
+            return isEqual
+        } else {
+            return false
+        }
+    }
+}

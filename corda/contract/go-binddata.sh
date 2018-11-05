@@ -1,0 +1,1 @@
+go-bindata -pkg contract -o resources.go resources/

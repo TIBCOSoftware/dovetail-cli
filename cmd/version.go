@@ -3,7 +3,7 @@
 * This file is subject to the license terms contained
 * in the license file that is distributed with this file.
  */
-package commands
+package cmd
 
 import (
 	"fmt"
@@ -12,9 +12,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	RootCmd.AddCommand(versionCmd)
+}
+
 var (
 	// VersionCmd prints out the current cli version
-	VersionCmd = &cobra.Command{
+	versionCmd = &cobra.Command{
 		Use:   "version",
 		Short: "Print the app version",
 		Run:   printVersion,

@@ -1,0 +1,38 @@
+package {{.NS}}
+
+import com.tibco.dovetail.container.corda.CordaCommandDataWithData
+import com.tibco.dovetail.container.corda.CordaFlowContract
+import net.corda.core.contracts.Contract;
+import net.corda.core.transactions.LedgerTransaction
+import java.io.InputStream
+import net.corda.core.serialization.CordaSerializable
+import java.util.Currency
+
+@CordaSerializable
+public class {{.ContractClass}}Contract : CordaFlowContract(), Contract {
+    companion object {
+        @JvmStatic
+        val {{$.ContractClass}}_CONTRACT_ID = "{{$.NS}}.{{$.ContractClass}}Contract"
+    } 
+    {{range $txn := .Commands }}
+    @CordaSerializable
+    class {{ $txn.Name }}({{range $i, $attr := $txn.Attributes}}{{if ne $i 0}}{{","}}{{end}} val {{$attr.Name}}: {{ $attr | GetKotlinType }}  {{end}}) : CordaCommandDataWithData() {
+        init {
+            {{range $attr := $txn.Attributes}}
+            putData("{{$attr.Name}}", {{$attr.Name}}){{end}}
+            putData("command", "{{$txn.NS}}.{{$txn.Name}}")
+        }
+    }
+    {{end}}
+    override fun getResourceHash(): String {
+        return "{{ .Flow | GetFlowSha256 }}"
+    }
+
+    override fun getTransactionJson(): InputStream {
+        return this.javaClass.getResourceAsStream("transactions.json")
+    }
+
+    override fun verify(tx: LedgerTransaction) {
+        verifyTransaction(tx)
+    }
+}

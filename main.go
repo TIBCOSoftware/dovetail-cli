@@ -6,13 +6,10 @@
 package main
 
 import (
-	"github.com/TIBCOSoftware/dovetail-cli/cmd/dovetail/commands"
+	"github.com/TIBCOSoftware/dovetail-cli/cmd"
+	_ "github.com/TIBCOSoftware/dovetail-cli/cmd/contract"
 )
 
-func init() {
-	commands.RootCmd.AddCommand(commands.VersionCmd)
-}
-
 func main() {
-	commands.Execute()
+	cmd.Execute()
 }

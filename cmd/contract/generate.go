@@ -97,7 +97,7 @@ var generateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		if target == "" {
-			target = "./waggle_generated"
+			target = "./dovetail_generated"
 		}
 		target, err = filepath.Abs(target)
 		if err != nil {

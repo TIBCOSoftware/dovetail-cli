@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	hlf "github.com/TIBCOSoftware/dovetail-contrib/blockchain/hyperledger-fabric"
-	dttrigger "github.com/TIBCOSoftware/dovetail-go-lib/runtime/trigger"
+	dttrigger "github.com/TIBCOSoftware/dovetail-contrib/smartcontract-go/runtime/trigger"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/hyperledger/fabric/protos/peer"
 )

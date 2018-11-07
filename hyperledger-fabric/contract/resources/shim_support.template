@@ -10,8 +10,8 @@ import (
 	"github.com/TIBCOSoftware/flogo-lib/app"
 	"github.com/TIBCOSoftware/flogo-lib/app/resource"
 	"github.com/TIBCOSoftware/flogo-lib/core/activity"
-	dt_runtime "github.com/TIBCOSoftware/dovetail-go-lib/runtime"
-	dt_trigger "github.com/TIBCOSoftware/dovetail-go-lib/runtime/trigger"
+	dt_runtime "github.com/TIBCOSoftware/dovetail-contrib/smartcontract-go/runtime"
+	dt_trigger "github.com/TIBCOSoftware/dovetail-contrib/smartcontract-go/runtime/trigger"
 	{{range $ti, $tref := .TriggerRefs}}
 	dt_{{$tref.Name}} "{{$tref.Ref}}"
 	{{end}}

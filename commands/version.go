@@ -12,10 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	RootCmd.AddCommand(versionCmd)
-}
-
 var (
 	// VersionCmd prints out the current cli version
 	versionCmd = &cobra.Command{

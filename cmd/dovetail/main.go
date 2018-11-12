@@ -6,8 +6,7 @@
 package main
 
 import (
-	"github.com/TIBCOSoftware/dovetail-cli/cmd"
-	_ "github.com/TIBCOSoftware/dovetail-cli/cmd/contract"
+	cmd "github.com/TIBCOSoftware/dovetail-cli/commands"
 )
 
 func main() {

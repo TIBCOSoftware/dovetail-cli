@@ -44,12 +44,12 @@ var deployCmd = &cobra.Command{
 	Short: "Deploy the smart contract to the chosen blockchain",
 	Long:  `Deploy the smart contract to the chosen blockchain`,
 	Run: func(cmd *cobra.Command, args []string) {
-		blockchain, err := contractCmd.PersistentFlags().GetString("blockchain")
+		blockchain, err := ContractCmd.PersistentFlags().GetString("blockchain")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		modelFile, err := contractCmd.PersistentFlags().GetString("modelfile")
+		modelFile, err := ContractCmd.PersistentFlags().GetString("modelfile")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

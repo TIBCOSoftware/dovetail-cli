@@ -3,6 +3,8 @@
 * This file is subject to the license terms contained
 * in the license file that is distributed with this file.
  */
+
+// Package contract is the one containing all the cli commands for contract operations
 package contract
 
 import (
@@ -22,6 +24,8 @@ func init() {
 	ContractCmd.MarkFlagRequired("modelfile")
 }
 
+
+// ContractCmd is the command for smart contracts
 var ContractCmd = &cobra.Command{
 	Use:              "contract",
 	Short:            "Commands for Smart Contracts",

@@ -2,7 +2,6 @@ module github.com/TIBCOSoftware/dovetail-cli
 
 require (
 	github.com/Sirupsen/logrus v1.0.4 // indirect
-	github.com/TIBCOSoftware/dovetail-cli v0.0.0-20181112221230-c94e7e742a14
 	github.com/TIBCOSoftware/flogo-contrib v0.5.5
 	github.com/TIBCOSoftware/flogo-lib v0.5.5
 	github.com/cloudflare/cfssl v0.0.0-20181102015659-ea4033a214e7 // indirect

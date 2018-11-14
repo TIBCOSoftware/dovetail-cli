@@ -1,4 +1,4 @@
-module github.com/mwenyan/dovetail-cli
+module github.com/TIBCOSoftware/dovetail-cli
 
 require (
 	github.com/Sirupsen/logrus v1.0.4 // indirect

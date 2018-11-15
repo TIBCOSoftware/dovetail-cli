@@ -6,9 +6,9 @@
 package main
 
 import (
-	cmd "github.com/TIBCOSoftware/dovetail-cli/commands"
+	"github.com/TIBCOSoftware/dovetail-cli/commands"
 )
 
 func main() {
-	cmd.Execute()
+	commands.Execute()
 }

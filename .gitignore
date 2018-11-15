@@ -56,7 +56,6 @@ out/
 ## OS X Resources
 .DS_Store
 bin/
-pkg/
 **/vendor/src/
 **/vendor/manifest
 ## Golang

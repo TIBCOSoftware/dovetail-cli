@@ -3,7 +3,9 @@
 * This file is subject to the license terms contained
 * in the license file that is distributed with this file.
  */
-package cmd
+
+// Package commands is the one containing all the cli commands
+package commands
 
 import (
 	"fmt"
@@ -21,7 +23,7 @@ var (
 	}
 )
 
-// return version of CLI/node and commit hash
+// GetVersion return version of CLI/node and commit hash
 func GetVersion() string {
 	v := version.Version
 	if version.GitCommit != "" {
@@ -30,7 +32,7 @@ func GetVersion() string {
 	return v
 }
 
-// CMD
+// printVersion prints the version
 func printVersion(cmd *cobra.Command, args []string) {
 	v := GetVersion()
 	fmt.Println(v)

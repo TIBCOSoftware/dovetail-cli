@@ -10,6 +10,9 @@ This allows definition of your smart contracts on a model driven approach and ab
 
 For step by step instructions on how to setup Project Dovetail™ environment, please go to the installation section on the [documentation page](https://tibcosoftware.github.io/dovetail/getting-started/getting-started-cli/)
 
+### Note on third party dependencies
+
+Once you install the cli the [following](./go.sum) third party dependencies will be downloaded to your machine.
 
 ### Contributing
 

@@ -12,7 +12,7 @@ For step by step instructions on how to setup Project Dovetail™ environment, p
 
 ### Note on third party dependencies
 
-Once you install the cli the [following](./go.sum) third party dependencies will be downloaded to your machine.
+Once you install the cli, [these](./go.sum) third party dependencies will be downloaded to your machine. Please note that these third party dependencies are subject to their own license terms.
 
 ### Contributing
 

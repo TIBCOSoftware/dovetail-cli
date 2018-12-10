@@ -9,6 +9,7 @@ import (
 )
 
 type ModelResources struct {
+	AppName      string
 	Assets       []string
 	Transactions []string
 	Schemas      map[string]string
@@ -51,6 +52,7 @@ func ParseFlowApp(jsonFile string) (*ModelResources, error) {
 	}
 
 	model := ModelResources{}
+	model.AppName = appCfg.Name
 	model.Schemas = make(map[string]string)
 	json.Unmarshal([]byte(appCfg.Triggers[0].GetSetting("assets")), &model.Assets)
 	json.Unmarshal([]byte(appCfg.Triggers[0].GetSetting("transactions")), &model.Transactions)

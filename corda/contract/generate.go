@@ -86,13 +86,14 @@ func (g *Generator) Generate() error {
 	}
 
 	//use the asset name as Contract name if there is only one asset
-	//otherwise use the model file name
+	//otherwise use the application name
 	contractName := ""
 	if len(data.States) == 1 {
 		contractName = data.States[0].Class
 	} else {
-		contractName = strings.Title(strings.Split(g.Opts.ModelFile, ".")[0])
+		contractName = flow.AppName
 	}
+	fmt.Printf("contractname = %s\n", contractName)
 	data.ContractClass = contractName
 
 	//create directories

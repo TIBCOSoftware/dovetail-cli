@@ -66,6 +66,7 @@ func ParseFlowApp(jsonFile string) (*ModelResources, error) {
 	return &model, nil
 }
 
+// ParseApp parses the model file into an app.Config struct
 func ParseApp(modelfile string) (*app.Config, error) {
 	appCfg := &app.Config{}
 

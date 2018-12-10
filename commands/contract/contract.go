@@ -21,7 +21,7 @@ func init() {
 	ContractCmd.PersistentFlags().StringP("version", "v", "1.0", "Smart contract version")
 
 	// Required flags
-	ContractCmd.MarkFlagRequired("modelfile")
+	ContractCmd.MarkPersistentFlagRequired("modelfile")
 }
 
 

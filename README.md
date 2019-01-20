@@ -8,6 +8,14 @@ This allows definition of your smart contracts on a model driven approach and ab
 
 ## Installation
 
+Install [Go version 1.11.x](https://golang.org/doc/install) and [set GOPATH environment variable](https://golang.org/doc/code.html#GOPATH).  Clone this project, then install and test it as follows:
+```
+export PATH=${GOPATH}/bin:${PATH}
+go get -u -d github.com/TIBCOSoftware/dovetail-cli
+cd ${GOPATH}/src/github.com/TIBCOSoftware/dovetail-cli
+make
+```
+
 For step by step instructions on how to setup Project Dovetail™ environment, please go to the installation section on the [documentation page](https://tibcosoftware.github.io/dovetail/getting-started/getting-started-cli/)
 
 ### Note on third party dependencies

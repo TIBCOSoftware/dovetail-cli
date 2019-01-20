@@ -17,17 +17,12 @@ import (
 
 func init() {
 	ContractCmd.PersistentFlags().StringP("blockchain", "b", config.HYPERLEDGER_FABRIC, fmt.Sprintf("Target blockchain to deploy to (%s)", strings.Join(config.Blockchains(), "|")))
-	ContractCmd.PersistentFlags().StringP("modelfile", "m", "", "Smart contract flow model file")
-	ContractCmd.PersistentFlags().StringP("version", "v", "1.0", "Smart contract version")
-
-	// Required flags
-	ContractCmd.MarkPersistentFlagRequired("modelfile")
+	ContractCmd.PersistentFlags().StringP("version", "v", "v1.0.0", "Smart contract version")
 }
-
 
 // ContractCmd is the command for smart contracts
 var ContractCmd = &cobra.Command{
-	Use:              "contract",
-	Short:            "Commands for Smart Contracts",
-	Long:             `Commands for Smart Contracts`,
+	Use:   "contract",
+	Short: "Commands for Smart Contracts",
+	Long:  `Commands for Smart Contracts`,
 }

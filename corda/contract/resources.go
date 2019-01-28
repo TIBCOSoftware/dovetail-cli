@@ -86,7 +86,7 @@ func resourcesKotlinConceptTemplate() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "resources/kotlin.concept.template", size: 2367, mode: os.FileMode(420), modTime: time.Unix(1542209137, 0)}
+	info := bindataFileInfo{name: "resources/kotlin.concept.template", size: 2367, mode: os.FileMode(420), modTime: time.Unix(1547964107, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -106,7 +106,7 @@ func resourcesKotlinContractTemplate() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "resources/kotlin.contract.template", size: 1337, mode: os.FileMode(420), modTime: time.Unix(1542209137, 0)}
+	info := bindataFileInfo{name: "resources/kotlin.contract.template", size: 1337, mode: os.FileMode(420), modTime: time.Unix(1547964107, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -126,7 +126,7 @@ func resourcesKotlinPomXml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "resources/kotlin.pom.xml", size: 3083, mode: os.FileMode(420), modTime: time.Unix(1543606176, 0)}
+	info := bindataFileInfo{name: "resources/kotlin.pom.xml", size: 3083, mode: os.FileMode(420), modTime: time.Unix(1547964107, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -146,7 +146,7 @@ func resourcesKotlinStateTemplate() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "resources/kotlin.state.template", size: 3011, mode: os.FileMode(420), modTime: time.Unix(1542209137, 0)}
+	info := bindataFileInfo{name: "resources/kotlin.state.template", size: 3011, mode: os.FileMode(420), modTime: time.Unix(1547964107, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

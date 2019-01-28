@@ -85,7 +85,7 @@ func resourcesImportTemplate() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "resources/import.template", size: 82, mode: os.FileMode(420), modTime: time.Unix(1540263332, 0)}
+	info := bindataFileInfo{name: "resources/import.template", size: 82, mode: os.FileMode(420), modTime: time.Unix(1547964107, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -105,7 +105,7 @@ func resourcesShimTemplate() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "resources/shim.template", size: 1541, mode: os.FileMode(420), modTime: time.Unix(1541470515, 0)}
+	info := bindataFileInfo{name: "resources/shim.template", size: 1541, mode: os.FileMode(420), modTime: time.Unix(1547964107, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -125,7 +125,7 @@ func resourcesShim_supportTemplate() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "resources/shim_support.template", size: 3476, mode: os.FileMode(420), modTime: time.Unix(1541470505, 0)}
+	info := bindataFileInfo{name: "resources/shim_support.template", size: 3476, mode: os.FileMode(420), modTime: time.Unix(1547964107, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

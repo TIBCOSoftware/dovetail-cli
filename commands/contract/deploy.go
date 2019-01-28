@@ -1,7 +1,7 @@
 /*
-* Copyright © 2018. TIBCO Software Inc.
-* This file is subject to the license terms contained
-* in the license file that is distributed with this file.
+ * Copyright © 2018. TIBCO Software Inc.
+ * This file is subject to the license terms contained
+ * in the license file that is distributed with this file.
  */
 
 // Package contract is the one containing all the cli commands for contract operations
@@ -13,32 +13,54 @@ import (
 	"strings"
 
 	"github.com/TIBCOSoftware/dovetail-cli/config"
-	fabricc "github.com/TIBCOSoftware/dovetail-cli/hyperledger-fabric/contract"
-	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
+	fabc "github.com/TIBCOSoftware/dovetail-cli/hyperledger-fabric/contract"
 	"github.com/spf13/cobra"
 )
 
 var (
-	id       string
-	path     string
-	version  string
-	userName string
-	orgName  string
+	id              string
+	path            string
+	policy          string
+	initArgs        string
+	channel         string
+	userName        string
+	orgName         string
+	networkConfig   string
+	networkOverride string
 )
 
 func init() {
-	//TODO: to be supported
-	//contractCmd.AddCommand(deployCmd)
+	ContractCmd.AddCommand(deployCmd)
+	ContractCmd.AddCommand(instantiateCmd)
+
 	deployCmd.Flags().StringVar(&id, "id", "", "Id of the Smart Contract")
-	deployCmd.Flags().StringVar(&path, "path", "", "Path of the Smart Contract")
-	deployCmd.Flags().StringVarP(&version, "version", "v", "", "Version of the Smart Contract")
-	deployCmd.Flags().StringVar(&userName, "user", "Admin", "User Name")
-	deployCmd.Flags().StringVar(&orgName, "org", "org1", "Organization Name")
+	deployCmd.Flags().StringVar(&path, "path", "", "Source folder of the generated Smart Contract, e.g., /path/to/hlf/src/myapp")
+	deployCmd.Flags().StringVar(&userName, "user", "Admin", "Admin user Name of the org")
+	deployCmd.Flags().StringVar(&orgName, "org", "", "Organization Name, defaut to client org in network config")
+	deployCmd.Flags().StringVar(&networkConfig, "config", "", "Path of base Fabric network config file, e.g., /path/to/config.yaml")
+	deployCmd.Flags().StringVar(&networkOverride, "override", "", "Path of Fabric network override config file")
 
 	// Required flags
 	deployCmd.MarkFlagRequired("id")
 	deployCmd.MarkFlagRequired("path")
-	deployCmd.MarkFlagRequired("version")
+	deployCmd.MarkFlagRequired("config")
+
+	instantiateCmd.Flags().StringVar(&id, "id", "", "Id of the Smart Contract")
+	instantiateCmd.Flags().StringVar(&path, "path", "", "Path of the deployed Smart Contract, e.g., myapp")
+	instantiateCmd.Flags().StringVar(&policy, "policy", "", "Endorsement policy to instantiate engines for the Smart Contract")
+	instantiateCmd.Flags().StringVar(&initArgs, "init", "{\"Args\": [\"init\"]}", "init args to instantiate engines for the Smart Contract")
+	instantiateCmd.Flags().StringVar(&channel, "channel", "", "channel ID to instantiate engines for the Smart Contract")
+	instantiateCmd.Flags().StringVar(&userName, "user", "Admin", "Admin user Name of the org")
+	instantiateCmd.Flags().StringVar(&orgName, "org", "", "Organization Name, defaut to client org in network config")
+	instantiateCmd.Flags().StringVar(&networkConfig, "config", "", "Path of base Fabric network config file, e.g., /path/to/config.yaml")
+	instantiateCmd.Flags().StringVar(&networkOverride, "override", "", "Path of Fabric network override config file")
+
+	// Required flags
+	instantiateCmd.MarkFlagRequired("id")
+	instantiateCmd.MarkFlagRequired("path")
+	instantiateCmd.MarkFlagRequired("policy")
+	instantiateCmd.MarkFlagRequired("channel")
+	instantiateCmd.MarkFlagRequired("config")
 }
 
 var deployCmd = &cobra.Command{
@@ -51,39 +73,69 @@ var deployCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		modelFile, err := ContractCmd.PersistentFlags().GetString("modelfile")
+		version, err := ContractCmd.PersistentFlags().GetString("version")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		deployer, err := GetDeployer(blockchain, modelFile)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		if err := deployer.Deploy(); err != nil {
-			fmt.Printf("Error deploying the contract: '%s'", err)
-			os.Exit(1)
+
+		switch strings.ToUpper(blockchain) {
+		case strings.ToUpper(config.HYPERLEDGER_FABRIC):
+			deployer := &fabc.Deployer{}
+			err := deployer.Deploy(
+				fabc.WithChaincodeID(id),
+				fabc.WithChaincodePath(path),
+				fabc.WithChaincodeVersion(version),
+				fabc.WithUserName(userName),
+				fabc.WithOrgName(orgName),
+				fabc.WithFabricConfig(networkConfig, networkOverride),
+			)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		default:
+			fmt.Println("Unsupported blockchain for deploy:", blockchain)
 		}
 	},
 }
 
-// GetDeployer chooses the right deployer
-func GetDeployer(blockchain, modelFile string) (contract.Deployer, error) {
-	switch strings.ToUpper(blockchain) {
-	case strings.ToUpper(config.HYPERLEDGER_FABRIC):
-		fabDep, err := createFabricDeployer(modelFile)
+var instantiateCmd = &cobra.Command{
+	Use:   "instantiate",
+	Short: "Start instances for the smart contract on the chosen blockchain",
+	Long:  `Start instances for the smart contract to the chosen blockchain`,
+	Run: func(cmd *cobra.Command, args []string) {
+		blockchain, err := ContractCmd.PersistentFlags().GetString("blockchain")
 		if err != nil {
-			return nil, err
+			fmt.Println(err)
+			os.Exit(1)
 		}
-		return fabDep, nil
-	default:
-		return nil, fmt.Errorf("Unsupported blockchain to deploy '%s'", blockchain)
-	}
-}
+		version, err := ContractCmd.PersistentFlags().GetString("version")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
-func createFabricDeployer(modelFile string) (contract.Deployer, error) {
-	options := fabricc.NewOptions(id, path, version, modelFile, userName, orgName)
-	fabDep := fabricc.NewDeployer(options)
-	return fabDep, nil
+		switch strings.ToUpper(blockchain) {
+		case strings.ToUpper(config.HYPERLEDGER_FABRIC):
+			deployer := &fabc.Deployer{}
+			err := deployer.Instantiate(
+				fabc.WithChaincodeID(id),
+				fabc.WithChaincodeVersion(version),
+				fabc.WithChaincodePath(path),
+				fabc.WithChaincodeInitArgs(initArgs),
+				fabc.WithChannelID(channel),
+				fabc.WithChaincodePolicy(policy),
+				fabc.WithUserName(userName),
+				fabc.WithOrgName(orgName),
+				fabc.WithFabricConfig(networkConfig, networkOverride),
+			)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		default:
+			fmt.Println("Unsupported blockchain for instantiate:", blockchain)
+		}
+	},
 }

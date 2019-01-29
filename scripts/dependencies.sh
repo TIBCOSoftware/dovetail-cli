@@ -16,6 +16,10 @@ function installDependencies {
     go get -u -d github.com/hyperledger/fabric
     cd ${GOPATH}/src/github.com/hyperledger/fabric
     git fetch $(git remote -v | grep '(fetch)' | grep hyperledger | awk '{print $1}') ${DEPEND_FABRIC_REL}
+    if [ -d "${GOPATH}/src/github.com/hyperledger/fabric-sdk-go" ]; then
+        echo "delete old fabric-sdk-go ..."
+        rm -rf ${GOPATH}/src/github.com/hyperledger/fabric-sdk-go
+    fi
     echo "download hyperledger fabric-sdk-go ..."
     go get -u -d github.com/hyperledger/fabric-sdk-go
     cd ${GOPATH}/src/github.com/hyperledger/fabric-sdk-go
@@ -76,7 +80,7 @@ function isDependenciesInstalled {
     [ -d "${GOPATH}/src/github.com/TIBCOSoftware/dovetail-contrib" ] || msgs+=("TIBCO dovetail-contrib is not installed (go get -u -d github.com/TIBCOSoftware/dovetail-contrib)")
 
     if [ ${#msgs[@]} -gt 0 ]; then
-        echo ${msgs[@]} | tr ' ' '\n'
+        printf '%s\n' "${msgs[@]}"
         return 1
     fi
 }

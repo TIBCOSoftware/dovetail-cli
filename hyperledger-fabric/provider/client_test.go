@@ -3,37 +3,17 @@ package provider
 import (
 	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestSdkSetupOk(t *testing.T) {
-	// TODO get config from config
-	configPath := "/Users/mtorres/dev/TIBCOSoftware/honeycomb-cli-dev/src/github.com/TIBCOSoftware/honeycomb/waggle/fixtures/config/config_test.yaml"
-	f := fixture{}
-	sdk := f.setup(configPath)
+const (
+	configPath = "${GOPATH}/src/github.com/hyperledger/fabric-sdk-go/test/fixtures/config/config_test.yaml"
+)
 
-	clientConfig, err := sdk.provider.IdentityConfig().Client()
-	if err != nil {
-		return nil, errors.WithMessage(err, "retrieving client configuration failed")
-	}
+func TestNewSdkOk(t *testing.T) {
 
-	//assert.NotNil(t, cfg, "Context should not be nil")
+	sdk, err := NewSDK(configPath)
 
-	// Check identifier
-	//assert.NotNil(t, ctx.Identifier(), "Identifier should not be nil")
+	assert.Nil(t, err, "Error should be nil for NewSDK configPath :'%s'", configPath)
+	assert.NotNil(t, sdk, "SDK should not be nil for NewSDK configPath :'%s'", configPath)
 }
-
-/*
-func TestClientProviderOk(t *testing.T) {
-	// TODO get config from config
-	ctxProvider := provider.NewClientProvider("/Users/mtorres/dev/TIBCOSoftware/honeycomb-cli-dev/src/github.com/TIBCOSoftware/honeycomb/waggle/fixtures/config/config_test.yaml")
-	ctx, err := ctxProvider()
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.NotNil(t, ctx, "Context should not be nil")
-
-	// Check identifier
-	assert.NotNil(t, ctx.Identifier(), "Identifier should not be nil")
-}
-*/

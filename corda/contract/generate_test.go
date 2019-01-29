@@ -76,7 +76,7 @@ func TestParser(t *testing.T) {
 	txns[2] = "com.tibco.cp.SettleIOU"
 
 	wdir, _ := filepath.Abs("./")
-	opts := NewOptions(jsonstring, "1.0.0", "com.tibco.cp.IOU", txns, wdir)
+	opts := NewOptions(jsonstring, "1.0.0", "com.tibco.cp.IOU", txns, wdir, "com.tibco.cp")
 	generator := NewGenerator(opts)
 
 	generator.Generate()

@@ -2,7 +2,7 @@ package contract
 
 import (
 	"fmt"
-	"testing"
+	//"testing"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
@@ -19,7 +19,10 @@ func (cc *auditChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
+/*
+// Is this test for the generated code or the cli??
 func TestAuditPutRecords(t *testing.T) {
+	
 
 	containerServiceStub := shim.NewMockStub("AuditSaft", &flowcc)
 	fmt.Printf("contractname %s\n", flowcc.ContractName)
@@ -131,3 +134,4 @@ func TestAuditPutRecords(t *testing.T) {
 	resp = containerServiceStub.MockInvoke(txnId, args)
 	fmt.Printf("query_by_hash_value resp=%s\n", string(resp.Payload))
 }
+*/

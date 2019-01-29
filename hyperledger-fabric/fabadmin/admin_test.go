@@ -54,7 +54,7 @@ func teardown() {
 
 func TestOrganization(t *testing.T) {
 	org := InitOrganization("org1", "Admin")
-	assert.Equal(t, "Org1MSP", org.MSPID, "org1 MSP should be 'Org1MSP'")
+	assert.Equal(t, "Org1MSPA", org.MSPID, "org1 MSP should be 'Org1MSP'")
 	assert.False(t, org.IsOrdererOrg, "org1 should not be an orderer org")
 	assert.Equal(t, 2, len(org.Peers), "org1 should have 2 peers")
 

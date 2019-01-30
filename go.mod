@@ -42,6 +42,7 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.2.1
 	github.com/stianeikeland/go-rpio v4.2.0+incompatible // indirect
+	github.com/stretchr/testify v1.3.0
 	github.com/tensorflow/tensorflow v1.12.0 // indirect
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect

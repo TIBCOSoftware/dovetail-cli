@@ -3,6 +3,7 @@ package model
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 
 	"github.com/TIBCOSoftware/flogo-lib/app"
@@ -68,15 +69,21 @@ func ParseFlowApp(jsonFile string) (*ModelResources, error) {
 
 // ParseApp parses the model file into an app.Config struct
 func ParseApp(modelfile string) (*app.Config, error) {
-	appCfg := &app.Config{}
 
 	flowjson, err := ioutil.ReadFile(modelfile)
 	if err != nil {
-		return appCfg, err
+		return nil, err
 	}
 
-	jsonParser := json.NewDecoder(bytes.NewReader(flowjson))
-	err = jsonParser.Decode(&appCfg)
+	return decodeApp(bytes.NewReader(flowjson))
+}
+
+// decodeApp decodes the model file into an app.Config struct
+func decodeApp(r io.Reader) (*app.Config, error) {
+	appCfg := &app.Config{}
+
+	jsonParser := json.NewDecoder(r)
+	err := jsonParser.Decode(&appCfg)
 	if err != nil {
 		return nil, err
 	}

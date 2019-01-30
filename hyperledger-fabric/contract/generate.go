@@ -103,7 +103,7 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
-	err = vendorFiles(path.Join(d.Opts.TargetDir, "hlf"), target)
+	err = vendorFiles(path.Join(d.Opts.TargetDir, strings.ToLower(appConfig.Name)), target)
 	if err != nil {
 		return err
 	}

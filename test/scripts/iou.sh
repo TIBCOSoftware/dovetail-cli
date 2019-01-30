@@ -1,6 +1,8 @@
 #!/bin/bash
 # test iou build and deployment
 
+echo "Running iou tests"
+
 SDIR=$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 # sample fabric config
@@ -28,7 +30,7 @@ else
 fi
 
 # install chaincode on org1
-CC_PATH="${TEST_ROOT}/models/iou/hlf/src/iou"
+CC_PATH="${TEST_ROOT}/models/iou/iou/src/iou"
 echo "install chaincode from ${CC_PATH} ..."
 dovetail contract deploy --config ${FABRIC_CONFIG} --override ${FABRIC_OVERRIDE} --path ${CC_PATH} --id iou
 
@@ -39,3 +41,6 @@ echo "instantiate chaincode from ${CC_PATH} ..."
 dovetail contract instantiate --config ${FABRIC_CONFIG} --override ${FABRIC_OVERRIDE} --path "iou" --id iou --policy "${CC_POLICY}" --channel ${CHANNEL}
 
 echo "chaincode iou instantiated on channel ${CHANNEL}"
+
+echo "Cleaning generated files"
+rm -rf "${TEST_ROOT}/models/iou/iou"

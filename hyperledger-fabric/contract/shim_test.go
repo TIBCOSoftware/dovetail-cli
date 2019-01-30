@@ -20,10 +20,6 @@ func (cc *auditChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
-func Testsimple(t *testing.T) {
-	assert.True(t, true)
-}
-
 /*
 // Is this test for the generated code or the cli??
 func TestAuditPutRecords(t *testing.T) {

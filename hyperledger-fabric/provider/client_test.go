@@ -1,16 +1,13 @@
 package provider
 
+/*
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func Testsimple(t *testing.T) {
-	assert.True(t, true)
-}
 
-/*
 const (
 	configPath = "${GOPATH}/src/github.com/hyperledger/fabric-sdk-go/test/fixtures/config/config_test.yaml"
 )

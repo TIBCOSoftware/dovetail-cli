@@ -2,10 +2,11 @@ package contract
 
 import (
 	"fmt"
-	//"testing"
+	"testing"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
+	"github.com/stretchr/testify/assert"
 )
 
 type auditChainCode struct{}
@@ -19,10 +20,14 @@ func (cc *auditChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
+func Testsimple(t *testing.T) {
+	assert.True(t, true)
+}
+
 /*
 // Is this test for the generated code or the cli??
 func TestAuditPutRecords(t *testing.T) {
-	
+
 
 	containerServiceStub := shim.NewMockStub("AuditSaft", &flowcc)
 	fmt.Printf("contractname %s\n", flowcc.ContractName)

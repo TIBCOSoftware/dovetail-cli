@@ -42,5 +42,5 @@ dovetail contract instantiate --config ${FABRIC_CONFIG} --override ${FABRIC_OVER
 
 echo "chaincode iou instantiated on channel ${CHANNEL}"
 
-echo "Cleaning generated files"
+echo "Cleaning generated files ${TEST_ROOT}/models/iou/iou"
 rm -rf "${TEST_ROOT}/models/iou/iou"

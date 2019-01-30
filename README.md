@@ -1,8 +1,6 @@
 # Dovetail cli
 
-<p align="center">
-  [![Build Status](https://travis-ci.org/torresashjian/dovetail-cli.svg?branch=master)](https://travis-ci.org/torresashjian/dovetail-cli)
-</p>
+[![Build Status](https://travis-ci.org/torresashjian/dovetail-cli.svg?branch=master)](https://travis-ci.org/torresashjian/dovetail-cli)
 
 ## What is dovetail cli?
 

@@ -5,8 +5,12 @@ echo "Running hyperledger-fabric tests"
 
 SDIR=$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-# cd ${SDIR}/../../hyperledger-fabric/contract
-# go test -v
+cd ${SDIR}
 
-# cd ${SDIR}/../../hyperledger-fabric/provider
-# go test -v
+./start-fab-network.sh
+
+./fabadmin.sh
+
+./iou.sh
+
+./stop-fab-network.sh

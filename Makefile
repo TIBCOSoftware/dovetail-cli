@@ -24,25 +24,9 @@ dovetail-tests:
 	@$(TEST_SCRIPTS_PATH)/dovetail.sh
 
 .PHONY: hyperledger-fabric-tests
-hyperledger-fabric-tests: fab-network-up iou-tests fab-network-down
+hyperledger-fabric-tests:
 	@$(TEST_SCRIPTS_PATH)/hyperledger-fabric.sh
 
 .PHONY: corda-tests
 corda-tests:
 	@$(TEST_SCRIPTS_PATH)/corda.sh
-
-.PHONY: fabadmin-tests
-fabadmin-tests:
-	@$(TEST_SCRIPTS_PATH)/fabadmin.sh
-
-.PHONY: iou-tests
-iou-tests: fabadmin-tests
-	@$(TEST_SCRIPTS_PATH)/iou.sh
-
-.PHONY: fab-network-up
-fab-network-up:
-	@$(TEST_SCRIPTS_PATH)/start-fab-network.sh
-
-.PHONY: fab-network-down
-fab-network-down:
-	@$(TEST_SCRIPTS_PATH)/stop-fab-network.sh

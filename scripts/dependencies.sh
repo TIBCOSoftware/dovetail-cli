@@ -23,7 +23,7 @@ function installDependencies {
     echo "download hyperledger fabric-sdk-go ..."
     go get -u -d github.com/hyperledger/fabric-sdk-go
     cd ${GOPATH}/src/github.com/hyperledger/fabric-sdk-go
-    echo "install dependencies of hyplerledger fabric-sdk-go ..."
+    echo "install dependencies of hyperledger fabric-sdk-go ..."
     make depend-noforce
 
     # update golang packages required by dovetail-cli runtime

@@ -2,7 +2,7 @@ SCRIPTS_PATH      := scripts
 TEST_SCRIPTS_PATH := test/scripts
 
 .PHONY: all
-all: install iou-tests fab-network-down
+all: install test_all
 
 .PHONY: depend
 depend: 
@@ -16,18 +16,17 @@ depend-noforce:
 install: depend-noforce
 	@GO111MODULE=on go install ./...
 
-.PHONY: fab-network-up
-fab-network-up:
-	@$(TEST_SCRIPTS_PATH)/start-fab-network.sh
+.PHONY: test_all
+all: dovetail-tests hyperledger-fabric-tests corda-tests
 
-.PHONY: fab-network-down
-fab-network-down:
-	@$(TEST_SCRIPTS_PATH)/stop-fab-network.sh
+.PHONY: dovetail-tests
+dovetail-tests:
+	@$(TEST_SCRIPTS_PATH)/dovetail.sh
 
-.PHONY: fabadmin-tests
-fabadmin-tests: fab-network-up
-	@$(TEST_SCRIPTS_PATH)/fabadmin.sh
+.PHONY: hyperledger-fabric-tests
+hyperledger-fabric-tests:
+	@$(TEST_SCRIPTS_PATH)/hyperledger-fabric.sh
 
-.PHONY: iou-tests
-iou-tests: fabadmin-tests
-	@$(TEST_SCRIPTS_PATH)/iou.sh
+.PHONY: corda-tests
+corda-tests:
+	@$(TEST_SCRIPTS_PATH)/corda.sh

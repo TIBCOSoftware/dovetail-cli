@@ -76,7 +76,7 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
-	target := wgutil.CreateTargetDirs(path.Join(d.Opts.TargetDir, "hlf", "src", strings.ToLower(appConfig.Name)))
+	target := wgutil.CreateTargetDirs(path.Join(d.Opts.TargetDir, strings.ToLower(appConfig.Name), "src", strings.ToLower(appConfig.Name)))
 
 	activities, triggers, err := getAppResources(appConfig)
 	if err != nil {
@@ -103,7 +103,7 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
-	err = vendorFiles(path.Join(d.Opts.TargetDir, "hlf"), target)
+	err = vendorFiles(path.Join(d.Opts.TargetDir, strings.ToLower(appConfig.Name)), target)
 	if err != nil {
 		return err
 	}

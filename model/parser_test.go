@@ -1,7 +1,7 @@
 package model
 
 import (
-	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -73,11 +73,11 @@ func TestParser(t *testing.T) {
 		"contrib": "W3sicmVmIjoiY2hhaW5jb2RlIiwiczNsb2NhdGlvbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODkwMC93aWNvbnRyaWJ1dGlvbnMvZmxvZ28vY2hhaW5jb2RlIn1d"
 	   }`
 
-	model, err := ParseFlowApp(jsonstring)
-	assert.Nil(t, err)
+	model, err := decodeApp(strings.NewReader(jsonstring))
+	assert.Nil(t, err, "Error should be nil")
+	assert.NotNil(t, model)
 
-	fmt.Printf("%v\n", model.Assets)
-	fmt.Printf("%v\n", model.Transactions)
-	fmt.Printf("%v\n", model.Schemas)
+	assert.True(t, len(model.Triggers) > 0, "Triggers should not be 0")
+	assert.True(t, len(model.Resources) > 0, "Resources should not be 0")
 
 }

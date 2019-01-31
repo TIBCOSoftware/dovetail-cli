@@ -1,4 +1,6 @@
-# dovetail-cli
+# Dovetail cli
+
+[![Build Status](https://travis-ci.org/TIBCOSoftware/dovetail-cli.svg?branch=master)](https://travis-ci.org/TIBCOSoftware/dovetail-cli)
 
 ## What is dovetail cli?
 

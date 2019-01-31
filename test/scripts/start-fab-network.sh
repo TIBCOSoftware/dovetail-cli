@@ -1,6 +1,8 @@
 #!/bin/bash
 # start fabric network if necessary
 
+echo "starting fabric network ..."
+
 GOPATH="${GOPATH:-${HOME}/go}"
 FABRIC_SDK_PATH="${GOPATH}/src/github.com/hyperledger/fabric-sdk-go"
 

@@ -17,9 +17,11 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/TIBCOSoftware/dovetail-cli/files"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
 	wgutil "github.com/TIBCOSoftware/dovetail-cli/util"
@@ -76,14 +78,27 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
-	target := wgutil.CreateTargetDirs(path.Join(d.Opts.TargetDir, strings.ToLower(appConfig.Name), "src", strings.ToLower(appConfig.Name)))
+	isFile := len(filepath.Ext(d.Opts.TargetDir)) > 0
+
+	targetDir := d.Opts.TargetDir
+	// If file is provided target is a temp location
+	if isFile {
+		dir, err := ioutil.TempDir("", "")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(dir) // clean up
+		targetDir = dir
+	}
+
+	target := wgutil.CreateTargetDirs(path.Join(targetDir, strings.ToLower(appConfig.Name), "src", strings.ToLower(appConfig.Name)))
 
 	activities, triggers, err := getAppResources(appConfig)
 	if err != nil {
 		return err
 	}
 
-	err = wgutil.CopyFile(d.Opts.ModelFile, target+"/"+appConfig.Name+".json")
+	err = wgutil.CopyFile(d.Opts.ModelFile, filepath.Join(target, fmt.Sprintf("%s.%s", appConfig.Name, "json")))
 	if err != nil {
 		return err
 	}
@@ -103,7 +118,7 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
-	err = vendorFiles(path.Join(d.Opts.TargetDir, strings.ToLower(appConfig.Name)), target)
+	err = vendorFiles(path.Join(targetDir, strings.ToLower(appConfig.Name)), target)
 	if err != nil {
 		return err
 	}
@@ -113,7 +128,17 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
+	// If it is file compress
+	if isFile {
+		logger.Println("Compressing files...")
+		err = files.ZipFolder(d.Opts.TargetDir, targetDir)
+		if err != nil {
+			return err
+		}
+	}
+
 	logger.Println("Generating Hyperledger Fabric smart contract... Done")
+	logger.Printf("Generated artifacts: '%s'\n", d.Opts.TargetDir)
 	return nil
 }
 
@@ -122,7 +147,7 @@ func vendorFiles(target, srcdir string) error {
 	if runtime.GOOS == "windows" {
 		separator = ";"
 	}
-	err := os.Setenv("GOPATH", os.Getenv("GOPATH")+separator+target)
+	err := os.Setenv("GOPATH", strings.Join([]string{os.Getenv("GOPATH"), target}, separator))
 	if err != nil {
 		return fmt.Errorf("error set up GOPATH:%v", err)
 	}

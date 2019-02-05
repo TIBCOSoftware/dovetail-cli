@@ -1,3 +1,8 @@
+/*
+* Copyright © 2019. TIBCO Software Inc.
+* This file is subject to the license terms contained
+* in the license file that is distributed with this file.
+ */
 package files
 
 import (
@@ -10,7 +15,6 @@ import (
 // ZipFiles compresses the folder and all of it's content into a single zip archive file.
 // Param 1: filename is the output zip file's name.
 // Param 2: foldername is the folder to add to the zip.
-// Param 3: basepath is the basepath that will become the root of the zip.
 func ZipFolder(filename, foldername string) error {
 	var files []string
 	err := filepath.Walk(foldername,
@@ -32,6 +36,7 @@ func ZipFolder(filename, foldername string) error {
 // ZipFiles compresses one or many files into a single zip archive file.
 // Param 1: filename is the output zip file's name.
 // Param 2: files is a list of files to add to the zip.
+// Param 3: basepath is the basepath that will become the root of the zip.
 func ZipFiles(filename string, files []string, basepath string) error {
 
 	newZipFile, err := os.Create(filename)

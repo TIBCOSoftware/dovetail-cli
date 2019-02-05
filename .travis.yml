@@ -8,7 +8,7 @@
     email:
       recipients:
         - mtorres@tibco.com
-        #- yxu@tibco.com
-        #- mwenyan@tibco.com
+        - yxu@tibco.com
+        - mwenyan@tibco.com
       on_success: never # default: change
       on_failure: always # default: always

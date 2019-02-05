@@ -127,7 +127,7 @@ func (d *Generator) Generate() error {
 	// If it is file compress
 	if goProject.IsFile() {
 		logger.Println("Compressing files...")
-		err = files.ZipFolder(goProject.GetInputTargetDir(), appDir)
+		err = files.ZipFolder(goProject.GetInputTargetDir(), goProject.GetTargetDir())
 		if err != nil {
 			return err
 		}

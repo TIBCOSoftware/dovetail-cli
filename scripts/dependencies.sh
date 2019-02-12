@@ -89,6 +89,11 @@ function isForceMode {
 
 # run from the specified GOPATH
 if ! isDependenciesInstalled || isForceMode; then
+    if [ ! -d "${GOPATH}" ] ; then
+        echo "[Error] ${GOPATH} not found"
+        exit 1
+    fi
+    echo "${GOPATH} found ..."
     cd ${GOPATH}
     installDependencies
 else

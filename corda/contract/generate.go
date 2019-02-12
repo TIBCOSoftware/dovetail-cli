@@ -19,6 +19,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/TIBCOSoftware/dovetail-cli/files"
+	"github.com/TIBCOSoftware/dovetail-cli/languages"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
 	wgutil "github.com/TIBCOSoftware/dovetail-cli/util"
@@ -47,6 +49,7 @@ type DataState struct {
 	Parent       string
 	Participants []string
 }
+
 type ContractData struct {
 	ContractClass string
 	NS            string
@@ -63,15 +66,17 @@ type Command struct {
 
 var models map[string]*model.ResourceMetadataModel
 
+// NewGenerator is the generator constructor
 func NewGenerator(opts *Options) contract.Generator {
 	return &Generator{Opts: opts}
 }
 
+// NewOptions is the options constructor
 func NewOptions(flowModel string, version string, state string, commands []string, target, ns string) *Options {
-
 	return &Options{ModelFile: flowModel, Version: version, State: state, Commands: commands, TargetDir: target, Namespace: ns}
 }
 
+// Generate generates a smart contract for the given options
 func (g *Generator) Generate() error {
 	logger.Println("Generating artifacts for Corda...")
 
@@ -79,6 +84,7 @@ func (g *Generator) Generate() error {
 	if err != nil {
 		return fmt.Errorf("error parsing flow app json file, err %v", err)
 	}
+
 	models = parseAllResources(flow.Schemas)
 	data, concepts, err := prepareContractStateData(g.Opts, flow.Assets, flow.Transactions, models)
 	if err != nil {
@@ -96,22 +102,30 @@ func (g *Generator) Generate() error {
 	fmt.Printf("contractname = %s\n", contractName)
 	data.ContractClass = contractName
 
+	javaProject := languages.NewJava(g.Opts.TargetDir, contractName)
+
+	err = javaProject.Init()
+	if err != nil {
+		return err
+	}
+
+	defer javaProject.Cleanup()
+
 	//create directories
-	target := wgutil.CreateTargetDirs(path.Join(g.Opts.TargetDir, "corda", strings.ToLower(contractName)))
-	resourcedir := wgutil.CreateDirIfNotExist(target, "src/main/resources", strings.Replace(g.Opts.Namespace, ".", "/", -1))
-	kotlindir := wgutil.CreateDirIfNotExist(target, "src/main/kotlin")
-	wgutil.CreateDirIfNotExist(target, "target/kotlin/classes")
+	resourcedir := wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "src/main/resources", strings.Replace(g.Opts.Namespace, ".", "/", -1))
+	kotlindir := wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "src/main/kotlin")
+	wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "target/kotlin/classes")
 
 	//create ContractState
 	for _, s := range data.States {
-		err = createKotlinFile(kotlindir, g.Opts.Namespace, s, "kotlin.state.template", s.Class+".kt")
+		err = createKotlinFile(kotlindir, g.Opts.Namespace, s, "kotlin.state.template", fmt.Sprintf("%s%s", s.Class, ".kt"))
 		if err != nil {
 			return fmt.Errorf("createContractStateKotlinFile kotlin.state.template err %v", err)
 		}
 	}
 
 	//create Contract
-	err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "kotlin.contract.template", contractName+"Contract.kt")
+	err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "kotlin.contract.template", fmt.Sprintf("%s%s", contractName, "Contract.kt"))
 	if err != nil {
 		return fmt.Errorf("createContractJavaFile kotlin.contract.template err %v", err)
 	}
@@ -128,17 +142,38 @@ func (g *Generator) Generate() error {
 		return fmt.Errorf("createConceptJavaFiles kotlin.concept.template err %v", err)
 	}
 
-	err = compileAndJar(target, g.Opts.Namespace, contractName, g.Opts.Version, "kotlin.pom.xml")
+	err = compileAndJar(javaProject.GetAppDir(), g.Opts.Namespace, contractName, g.Opts.Version, "kotlin.pom.xml")
 	if err != nil {
 		return fmt.Errorf("compileAndJar kotlin.pom.xml err %v", err)
 	}
 
-	//cleanup
-	logger.Println("Cleaning up...")
-	os.RemoveAll(path.Join(target, "generated-sources"))
-	os.RemoveAll(path.Join(target, "maven-archiver"))
-	os.RemoveAll(path.Join(target, "maven-status"))
-	os.RemoveAll(path.Join(target, "target"))
+	//Cleanup
+	err = os.RemoveAll(path.Join(javaProject.GetAppDir(), "generated-sources"))
+	if err != nil {
+		return err
+	}
+	err = os.RemoveAll(path.Join(javaProject.GetAppDir(), "maven-archiver"))
+	if err != nil {
+		return err
+	}
+	err = os.RemoveAll(path.Join(javaProject.GetAppDir(), "maven-status"))
+	if err != nil {
+		return err
+	}
+	err = os.RemoveAll(path.Join(javaProject.GetAppDir(), "target"))
+	if err != nil {
+		return err
+	}
+
+	// If it is file compress
+	if javaProject.IsFile() {
+		logger.Println("Compressing files...")
+		err = files.ZipFolder(javaProject.GetInputTargetDir(), javaProject.GetTargetDir())
+		if err != nil {
+			return err
+		}
+	}
+
 	logger.Printf("Finished generating artifacts for Corda")
 	return nil
 }

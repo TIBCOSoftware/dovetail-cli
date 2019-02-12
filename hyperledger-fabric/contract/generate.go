@@ -17,9 +17,12 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/TIBCOSoftware/dovetail-cli/files"
+	"github.com/TIBCOSoftware/dovetail-cli/languages"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
 	wgutil "github.com/TIBCOSoftware/dovetail-cli/util"
@@ -63,7 +66,6 @@ func NewGenerator(opts *GenOptions) contract.Generator {
 
 // NewGenOptions is the options constructor
 func NewGenOptions(targetPath, modelFile, version string, enableSecurity bool) *GenOptions {
-
 	return &GenOptions{TargetDir: targetPath, ModelFile: modelFile, Version: version, EnableTxnSecurity: enableSecurity}
 }
 
@@ -76,44 +78,63 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
-	target := wgutil.CreateTargetDirs(path.Join(d.Opts.TargetDir, strings.ToLower(appConfig.Name), "src", strings.ToLower(appConfig.Name)))
+	goProject := languages.NewGo(d.Opts.TargetDir, appConfig.Name)
+
+	err = goProject.Init()
+	if err != nil {
+		return err
+	}
+
+	defer goProject.Cleanup()
+
+	appDir := goProject.GetAppDir()
 
 	activities, triggers, err := getAppResources(appConfig)
 	if err != nil {
 		return err
 	}
 
-	err = wgutil.CopyFile(d.Opts.ModelFile, target+"/"+appConfig.Name+".json")
+	err = wgutil.CopyFile(d.Opts.ModelFile, filepath.Join(appDir, fmt.Sprintf("%s.%s", appConfig.Name, "json")))
 	if err != nil {
 		return err
 	}
 
-	err = createShimSupportFile(target, appConfig.Name, d.Opts, activities, triggers)
+	err = createShimSupportFile(appDir, appConfig.Name, d.Opts, activities, triggers)
 	if err != nil {
 		return err
 	}
 
-	err = createShimFile(target, appConfig.Name)
+	err = createShimFile(appDir, appConfig.Name)
 	if err != nil {
 		return err
 	}
 
-	err = createFunctionImportFile(appConfig.Name, target, d.Opts.ModelFile)
+	err = createFunctionImportFile(appConfig.Name, appDir, d.Opts.ModelFile)
 	if err != nil {
 		return err
 	}
 
-	err = vendorFiles(path.Join(d.Opts.TargetDir, strings.ToLower(appConfig.Name)), target)
+	err = vendorFiles(path.Join(goProject.GetTargetDir(), strings.ToLower(appConfig.Name)), appDir)
 	if err != nil {
 		return err
 	}
 
-	err = createResourceBundle(appConfig.Name, target, activities, triggers)
+	err = createResourceBundle(appConfig.Name, appDir, activities, triggers)
 	if err != nil {
 		return err
+	}
+
+	// If it is file compress
+	if goProject.IsFile() {
+		logger.Println("Compressing files...")
+		err = files.ZipFolder(goProject.GetInputTargetDir(), goProject.GetTargetDir())
+		if err != nil {
+			return err
+		}
 	}
 
 	logger.Println("Generating Hyperledger Fabric smart contract... Done")
+	logger.Printf("Generated artifacts: '%s'\n", goProject.GetInputTargetDir())
 	return nil
 }
 
@@ -122,7 +143,7 @@ func vendorFiles(target, srcdir string) error {
 	if runtime.GOOS == "windows" {
 		separator = ";"
 	}
-	err := os.Setenv("GOPATH", os.Getenv("GOPATH")+separator+target)
+	err := os.Setenv("GOPATH", strings.Join([]string{os.Getenv("GOPATH"), target}, separator))
 	if err != nil {
 		return fmt.Errorf("error set up GOPATH:%v", err)
 	}

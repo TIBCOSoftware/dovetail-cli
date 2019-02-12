@@ -35,7 +35,7 @@ var (
 
 func init() {
 	ContractCmd.AddCommand(generateCmd)
-	generateCmd.PersistentFlags().StringP("target", "t", ".", "Destination path for generated artifacts, if a filename is given the generated artifacts will compressed as a zip file with the file name provided")
+	generateCmd.PersistentFlags().StringP("target", "t", ".", "Destination path for generated artifacts, if a filename is given (With extension) the generated artifacts will compressed as a zip file with the file name provided")
 	generateCmd.Flags().StringP("state", "", "", "Corda only, optional, specify asset name to generate contract state, default to all assets in the specified namespace")
 	generateCmd.Flags().StringP("commands", "", "", "Corda only, optional, comma delimited list of transactions(commands) allowed for the selected state txn1,txn2,..., default to all transactions")
 	generateCmd.Flags().StringP("namespace", "", "", "Corda only, required, composer model namespace")

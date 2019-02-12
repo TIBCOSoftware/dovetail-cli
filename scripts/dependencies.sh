@@ -93,6 +93,12 @@ if ! isDependenciesInstalled || isForceMode; then
         echo "[Error] ${GOPATH} not found"
         exit 1
     fi
+    if command -v go &>/dev/null; then
+        echo "Go installation looks ok ..."
+    else
+        echo "[Error] Go installation not found ..."
+        exit 1
+    fi
     echo "${GOPATH} found ..."
     cd ${GOPATH}
     installDependencies

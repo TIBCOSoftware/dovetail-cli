@@ -10,7 +10,14 @@ cd ${SDIR}
 ./start-fab-network.sh
 
 ./fabadmin.sh
+status=$?
 
-./iou.sh
+if [ $status -ne 0 ]; then
+  echo "failed fabadmin test"
+else
+  ./iou.sh
+  status=$?
+fi
 
 ./stop-fab-network.sh
+exit $status

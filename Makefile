@@ -16,6 +16,10 @@ depend-noforce:
 install: depend-noforce
 	@GO111MODULE=on go install ./...
 
+.PHONY: buildtype
+buildtype: 
+	@$(SCRIPTS_PATH)/buildtype.sh
+
 .PHONY: test_all
 all: dovetail-tests hyperledger-fabric-tests corda-tests
 

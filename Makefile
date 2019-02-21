@@ -17,7 +17,7 @@ install: depend-noforce
 	@GO111MODULE=on go install ./...
 
 .PHONY: buildtype
-buildtype: 
+buildtype: install
 	@$(SCRIPTS_PATH)/buildtype.sh
 
 .PHONY: test_all

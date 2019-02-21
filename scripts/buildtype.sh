@@ -11,11 +11,11 @@ if [ -n "$GOPATH" ]; then
     cp -r ${GOPATH}/ $temp_dir
     cp Dockerfile $temp_dir
     cd $temp_dir
-    echo "Building dovetail-buildtype: ${env.BID} ..."
+    echo "Building dovetail-buildtype:${BID} ..."
     docker build -t dovetail-buildtype .
-    docker tag dovetail-buildtype reldocker.tibco.com/tibcolabs/dovetail-buildtype:${env.BID}
-    docker push reldocker.tibco.com/tibcolabs/dovetail-buildtype:${env.BID}
-    docker images reldocker.tibco.com/tibcolabs/dovetail-buildtype:${env.BID} --format "{{.Repository}}        {{.Tag}}        {{.ID}}        {{.CreatedSince}}        {{.Size}}" > ${env.WORKDIR}/artifacts.txt
+    docker tag dovetail-buildtype reldocker.tibco.com/tibcolabs/dovetail-buildtype:${BID}
+    docker push reldocker.tibco.com/tibcolabs/dovetail-buildtype:${BID}
+    docker images reldocker.tibco.com/tibcolabs/dovetail-buildtype:${BID} --format "{{.Repository}}        {{.Tag}}        {{.ID}}        {{.CreatedSince}}        {{.Size}}" > ${WORKDIR}/artifacts.txt
 
     echo "cleaning up..."
     rm -Rf ${temp_dir}

@@ -11,7 +11,7 @@ if [ -n "$GOPATH" ]; then
     cp -r ${GOPATH}/ $temp_dir
     cp Dockerfile $temp_dir
     cd $temp_dir
-    echo "Building dovetail-buildtype:${env.BID} ..."
+    echo "Building dovetail-buildtype: ${env.BID} ..."
     docker build -t dovetail-buildtype .
     docker tag dovetail-buildtype reldocker.tibco.com/tibcolabs/dovetail-buildtype:${env.BID}
     docker push reldocker.tibco.com/tibcolabs/dovetail-buildtype:${env.BID}

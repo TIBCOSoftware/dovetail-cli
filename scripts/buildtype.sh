@@ -15,7 +15,7 @@ if [ -n "$GOPATH" ]; then
     docker build -t dovetail-buildtype .
     docker tag dovetail-buildtype reldocker.tibco.com/tibcolabs/dovetail-buildtype:${BID}
     docker push reldocker.tibco.com/tibcolabs/dovetail-buildtype:${BID}
-    docker images reldocker.tibco.com/tibcolabs/dovetail-buildtype:${BID} --format "{{.Repository}}        {{.Tag}}        {{.ID}}        {{.CreatedSince}}        {{.Size}}" > ${WORKDIR}/artifacts.txt
+    docker images reldocker.tibco.com/tibcolabs/dovetail-buildtype:${BID} --format "{{.Repository}}        {{.Tag}}        {{.ID}}        {{.CreatedSince}}        {{.Size}}" > ${WORKDIR}/images.txt
 
     echo "cleaning up..."
     rm -Rf ${temp_dir}

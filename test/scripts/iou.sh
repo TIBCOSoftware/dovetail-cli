@@ -39,8 +39,15 @@ CC_POLICY="AND ('Org1MSP.member','Org2MSP.member')"
 CHANNEL="orgchannel"
 echo "instantiate chaincode from ${CC_PATH} ..."
 dovetail contract instantiate --config ${FABRIC_CONFIG} --override ${FABRIC_OVERRIDE} --path "iou" --id iou --policy "${CC_POLICY}" --channel ${CHANNEL}
+status=$?
 
-echo "chaincode iou instantiated on channel ${CHANNEL}"
+if [ $status -ne 0 ]; then
+  echo "failed to instantiate chaincode iou"
+else
+  echo "chaincode iou instantiated on channel ${CHANNEL}"
+fi
 
 echo "Cleaning generated files ${TEST_ROOT}/models/iou/iou"
 rm -rf "${TEST_ROOT}/models/iou/iou"
+exit $status
+

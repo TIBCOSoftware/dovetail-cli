@@ -2,7 +2,7 @@ SCRIPTS_PATH      := scripts
 TEST_SCRIPTS_PATH := test/scripts
 
 .PHONY: all
-all: install test_all
+all: install dovetail-tests
 
 .PHONY: depend
 depend: 

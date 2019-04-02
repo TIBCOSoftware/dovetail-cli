@@ -12,6 +12,21 @@ This allows definition of your smart contracts on a model driven approach and ab
 
 For step by step instructions on how to setup Project Dovetail™ cli environment, please go to the installation section on the [documentation page](https://tibcosoftware.github.io/dovetail/getting-started/getting-started-cli/)
 
+## Build dovetail cli from source
+
+Install [Go version 1.11.x](https://golang.org/doc/install) and [set GOPATH environment variable](https://golang.org/doc/code.html#GOPATH).  Then install and test it as follows:
+
+```
+export PATH=${GOPATH}/bin:${PATH}
+go get -u -d github.com/TIBCOSoftware/dovetail-cli
+cd ${GOPATH}/src/github.com/TIBCOSoftware/dovetail-cli
+make
+```
+
+If you want to just install the cli and not run any tests use "make install" command instead of "make".
+
+If you see test errors, please refer the Troubleshooting or Support section below.
+
 ### Note on third party dependencies
 
 Once you install the cli, [these](./go.sum) third party dependencies will be downloaded to your machine. Please note that these third party dependencies are subject to their own license terms.

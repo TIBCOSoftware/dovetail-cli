@@ -7,9 +7,9 @@
   	<version>version</version>
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.source>1.8</maven.compiler.source>
-    <kotlin.version>1.1.60</kotlin.version>
-		<kotlin.compiler.languageVersion>1.1</kotlin.compiler.languageVersion>
-		<kotlin.compiler.apiVersion>1.1</kotlin.compiler.apiVersion>
+    <kotlin.version>1.2.71</kotlin.version>
+		<kotlin.compiler.languageVersion>1.2</kotlin.compiler.languageVersion>
+		<kotlin.compiler.apiVersion>1.2</kotlin.compiler.apiVersion>
 		<kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
 </properties>
   <groupId>${groupId}</groupId>
@@ -18,13 +18,13 @@
   <dependencies>
 		<dependency>
         <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-stdlib-jre8</artifactId>
+        <artifactId>kotlin-stdlib-jdk8</artifactId>
         <version>${kotlin.version}</version>
     </dependency>
   	<dependency>
   		<groupId>net.corda</groupId>
   		<artifactId>corda-core</artifactId>
-  		<version>[2.0.0,)</version>
+  		<version>[4.0,)</version>
   	</dependency>
   	<dependency>
   		<groupId>net.corda</groupId>
@@ -34,7 +34,12 @@
   	<dependency>
   		<groupId>com.tibco.dovetail</groupId>
   		<artifactId>dovetail-corda</artifactId>
-  		<version>[0.1.0, )</version>
+  		<version>[0.1.3, )</version>
+  	</dependency>
+    <dependency>
+  		<groupId>com.palominolabs.metrics</groupId>
+  		<artifactId>metrics-new-relic</artifactId>
+  		<version>[1.0.5,)</version>
   	</dependency>
   </dependencies>
   <repositories>

@@ -19,9 +19,9 @@ type ModelResources struct {
 type ResourceMetadataModel struct {
 	Metadata struct {
 		Type         string `json:"type"`
-		Parent       string `json:"parent"`
-		CordaClass   string `json:"cordaClass"`
-		IdentifiedBy string `json:"identifiedBy"`
+		Parent       string `json:"parent, omitempty"`
+		CordaClass   string `json:"cordaClass, omitempty"`
+		IdentifiedBy string `json:"identifiedBy, omitempty"`
 		IsAbstract   bool   `json:"isAbstract, omitempty"`
 		Decorators   []struct {
 			Name string   `json:"name"`
@@ -34,9 +34,9 @@ type ResourceMetadataModel struct {
 type ResourceAttribute struct {
 	Name       string `json:"name"`
 	Type       string `json:"type"`
-	IsRef      bool   `json:"isRef"`
-	IsArray    bool   `json:"isArray"`
-	IsOptional bool   `json:"isOptional"`
+	IsRef      bool   `json:"isRef, omitempty"`
+	IsArray    bool   `json:"isArray, omitempty"`
+	IsOptional bool   `json:"isOptional, omitempty"`
 }
 
 func ParseResourceModel(jsonResource string) *ResourceMetadataModel {
@@ -75,11 +75,11 @@ func ParseApp(modelfile string) (*app.Config, error) {
 		return nil, err
 	}
 
-	return decodeApp(bytes.NewReader(flowjson))
+	return DecodeApp(bytes.NewReader(flowjson))
 }
 
 // decodeApp decodes the model file into an app.Config struct
-func decodeApp(r io.Reader) (*app.Config, error) {
+func DecodeApp(r io.Reader) (*app.Config, error) {
 	appCfg := &app.Config{}
 
 	jsonParser := json.NewDecoder(r)

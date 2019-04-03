@@ -26,9 +26,9 @@ func CopyFile(src string, dest string) error {
 		return err
 	}
 
-	return copyContent(content, dest)
+	return CopyContent(content, dest)
 }
-func copyContent(content []byte, dest string) error {
+func CopyContent(content []byte, dest string) error {
 	ft, err := os.Create(dest)
 	if err != nil {
 		return err

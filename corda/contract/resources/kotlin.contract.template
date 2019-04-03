@@ -7,6 +7,7 @@ import net.corda.core.transactions.LedgerTransaction
 import java.io.InputStream
 import net.corda.core.serialization.CordaSerializable
 import java.util.Currency
+import net.corda.core.identity.AbstractParty
 
 @CordaSerializable
 public class {{.ContractClass}}Contract : CordaFlowContract(), Contract {

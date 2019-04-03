@@ -31,7 +31,7 @@ function installDependencies {
     go get -u github.com/jteeuwen/go-bindata/...
     go get -u github.com/kardianos/govendor
 
-    # update golang packages required by fabric-sdk-go test
+    # update golang packages for fabric-sdk-go test
     go get -u github.com/golang/protobuf
     go get -u google.golang.org/grpc
     go get -u github.com/cloudflare/cfssl/...
@@ -43,6 +43,15 @@ function installDependencies {
     go get -u github.com/golang/mock
     go install github.com/golang/mock/mockgen
     go get -u github.com/Knetic/govaluate
+    go get -u github.com/hyperledger/fabric-lib-go
+    go get -u github.com/go-kit/kit
+    go get -u github.com/beorn7/perks
+    go get -u github.com/go-logfmt/logfmt
+    go get -u github.com/prometheus/common
+    go get -u github.com/prometheus/procfs
+    go get -u github.com/prometheus/client_golang
+    go get -u github.com/prometheus/client_model
+    go get -u github.com/matttproud/golang_protobuf_extensions
 
     # other required golang packages if GO111MODULE=auto
     go get -u go.uber.org/zap/zapcore

@@ -1,0 +1,7 @@
+package main
+
+import (
+	{{range $nm, $ref := .Functions}}
+	_ "{{$ref}}"
+	{{end}}
+)

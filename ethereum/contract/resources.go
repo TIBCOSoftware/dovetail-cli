@@ -5,8 +5,14 @@
  */
 package contract
 
-// cargo toml template
-const cargoToml = `
+// CargoToml struct for cargo toml template
+type CargoToml struct {
+	Name    string
+	Version string
+}
+
+// CargoTomlTemplate cargo toml template
+const CargoTomlTemplate = `
 [package]
 name = "{{.Name}}"
 version = "{{.Version}}"

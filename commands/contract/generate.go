@@ -15,6 +15,7 @@ import (
 
 	"github.com/TIBCOSoftware/dovetail-cli/config"
 	corda "github.com/TIBCOSoftware/dovetail-cli/corda/contract"
+	ethereum "github.com/TIBCOSoftware/dovetail-cli/ethereum/contract"
 	fabric "github.com/TIBCOSoftware/dovetail-cli/hyperledger-fabric/contract"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
@@ -124,6 +125,8 @@ func GetGenerator(blockchain string) (contract.Generator, error) {
 		return createFabricGenerator()
 	case strings.ToUpper(config.CORDA):
 		return createCordaGenerator()
+	case strings.ToUpper(config.ETHEREUM):
+		return createEthereumGenerator()
 	default:
 		return nil, fmt.Errorf("Unsupported blockchain to deploy '%s'", blockchain)
 	}
@@ -151,6 +154,13 @@ func createCordaGenerator() (contract.Generator, error) {
 	options := corda.NewOptions(modelfile, smversion, cordaState, cmds, target, cordaNS)
 	cordaGen := corda.NewGenerator(options)
 	return cordaGen, nil
+}
+
+func createEthereumGenerator() (contract.Generator, error) {
+	options := ethereum.NewGenOptions(target, modelfile)
+
+	gen := ethereum.NewGenerator(options)
+	return gen, nil
 }
 
 func validateModelFile(modelfile string) error {

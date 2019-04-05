@@ -8,9 +8,11 @@
 package contract
 
 import (
+	"bufio"
 	"log"
 	"os"
-	//"text/template"
+	"path"
+	"text/template"
 
 	"github.com/TIBCOSoftware/dovetail-cli/languages"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
@@ -58,6 +60,37 @@ func (d *Generator) Generate() error {
 
 	defer rustProject.Cleanup()
 
+	err = createCargoTomlFile(rustProject.GetTargetDir(), appConfig.Name)
+	if err != nil {
+		return err
+	}
+
 	logger.Println("Generating Ethereum smart contract... Done")
+	return nil
+}
+
+func createCargoTomlFile(targetdir, appName string) error {
+	tomlFileName := "Cargo.toml"
+	logger.Printf("Create cargo %s file ....\n", tomlFileName)
+
+	f, error := os.Create(path.Join(targetdir, appName, tomlFileName))
+	if error != nil {
+		return error
+	}
+	defer f.Close()
+
+	writer := bufio.NewWriter(f)
+
+	t, err := template.New("cargo_toml").Parse(CargoTomlTemplate)
+	if err != nil {
+		return err
+	}
+	data := CargoToml{Name: appName, Version: "0.0.1"}
+
+	err = t.Execute(writer, data)
+	if err != nil {
+		return err
+	}
+	writer.Flush()
 	return nil
 }

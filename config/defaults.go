@@ -9,5 +9,7 @@ const (
 	// HYPERLEDGER_FABRIC blockchain name
 	HYPERLEDGER_FABRIC = "fabric"
 	// CORDA blockchain name
-	CORDA              = "corda"
+	CORDA = "corda"
+	// ETHEREUM blockchain name
+	ETHEREUM = "ethereum"
 )

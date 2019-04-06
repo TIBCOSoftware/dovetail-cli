@@ -1,5 +1,0 @@
-[package]
-name = "{{.Name}}"
-version = "{{.Version}}"
-authors = ["user <myemail@email.com>"]
-edition = "2018"

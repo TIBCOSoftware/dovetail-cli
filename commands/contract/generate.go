@@ -32,6 +32,7 @@ var (
 	smversion         string
 	modelfile         string
 	enableTxnSecurity bool
+	dovetailMacroPath string
 )
 
 func init() {
@@ -42,6 +43,7 @@ func init() {
 	generateCmd.Flags().StringP("namespace", "", "", "Corda only, required, composer model namespace")
 	generateCmd.Flags().BoolP("enableTransactionSecurity", "", false, "true to enable transaction level security for the targetd blockchain if supported")
 	generateCmd.Flags().StringVarP(&modelfile, "modelfile", "m", "", "Smart contract flow model file")
+	generateCmd.Flags().StringVarP(&dovetailMacroPath, "macro", "", "", "Path to the dovetail macro")
 
 	generateCmd.MarkFlagRequired("target")
 	generateCmd.MarkFlagRequired("modelfile")
@@ -157,7 +159,7 @@ func createCordaGenerator() (contract.Generator, error) {
 }
 
 func createEthereumGenerator() (contract.Generator, error) {
-	options := ethereum.NewGenOptions(target, modelfile)
+	options := ethereum.NewGenOptions(target, modelfile, dovetailMacroPath)
 
 	gen := ethereum.NewGenerator(options)
 	return gen, nil

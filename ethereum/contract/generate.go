@@ -14,6 +14,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/TIBCOSoftware/dovetail-cli/languages"
@@ -103,7 +104,10 @@ func createCargoTomlFile(targetdir, appName, dovetailMacroPath string, appConfig
 		return err
 	}
 
-	dependencies := getGitDependencies(appConfig)
+	dependencies, err := getGitDependencies(appConfig)
+	if err != nil {
+		return err
+	}
 
 	data := CargoToml{Name: appName, Version: "0.0.1", DovetailMacroPath: dovetailMacroPath, GitDependencies: dependencies}
 
@@ -115,22 +119,35 @@ func createCargoTomlFile(targetdir, appName, dovetailMacroPath string, appConfig
 	return nil
 }
 
-func getGitDependencies(appConfig *app.Config) []GitDependency {
+func getGitDependencies(appConfig *app.Config) ([]GitDependency, error) {
 	dependencies := []GitDependency{}
 	// Get trigger dependencies
 	for _, trigger := range appConfig.Triggers {
-		url := trigger.Ref
-		id := getDependencyID(url)
+		url, err := getDependencyURL(trigger.Ref)
+		if err != nil {
+			return nil, err
+		}
+		id := getDependencyID(trigger.Ref)
 		// TODO remove ethereum branch
 		branch := "ethereum"
 		dependencies = append(dependencies, GitDependency{ID: id, URL: url, Branch: branch})
 	}
-	return dependencies
+	return dependencies, nil
 }
 
-func getDependencyID(url string) string {
-	// Get last element of url
-	return filepath.Base(url)
+func getDependencyURL(ref string) (string, error) {
+	seg := strings.Split(ref, "/")
+	if len(seg) < 3 {
+		return "", fmt.Errorf("Invalid dependency URL %s", ref)
+	}
+	dependencyURL := fmt.Sprintf("%s/%s/%s", seg[0], seg[1], seg[2])
+
+	return fmt.Sprintf("https://%s", dependencyURL), nil
+}
+
+func getDependencyID(ref string) string {
+	// Get last element of ref
+	return filepath.Base(ref)
 }
 
 func createMainFile(appDir, appName, modelFileName string) error {

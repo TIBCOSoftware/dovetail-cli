@@ -10,6 +10,14 @@ type CargoToml struct {
 	Name              string
 	Version           string
 	DovetailMacroPath string
+	GitDependencies   []GitDependency
+}
+
+// GitDependency struct for cargo toml template dependencies
+type GitDependency struct {
+	ID     string
+	URL    string
+	Branch string
 }
 
 // CargoTomlTemplate cargo toml template
@@ -25,6 +33,7 @@ dovetail_macro_derive = { path = "{{.DovetailMacroPath}}" }
 serde_json = "1.0"
 serde_derive = "1.0"
 serde = "1.0"
+{{range $gitDependency := .GitDependencies}}{{$gitDependency.ID}} = { git = "{{$gitDependency.URL}}", branch = "{{$gitDependency.Branch}}" } {{end}}
 `
 
 // MainRs struct for main rs template

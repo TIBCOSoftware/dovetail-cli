@@ -20,6 +20,7 @@ import (
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
 	wgutil "github.com/TIBCOSoftware/dovetail-cli/util"
+	"github.com/TIBCOSoftware/flogo-lib/app"
 )
 
 var logger = log.New(os.Stdout, "", log.LstdFlags)
@@ -71,7 +72,7 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
-	err = createCargoTomlFile(rustProject.GetTargetDir(), appConfig.Name, d.Opts.DovetailMacroPath)
+	err = createCargoTomlFile(rustProject.GetTargetDir(), appConfig.Name, d.Opts.DovetailMacroPath, appConfig)
 	if err != nil {
 		return err
 	}
@@ -85,7 +86,7 @@ func (d *Generator) Generate() error {
 	return nil
 }
 
-func createCargoTomlFile(targetdir, appName, dovetailMacroPath string) error {
+func createCargoTomlFile(targetdir, appName, dovetailMacroPath string, appConfig *app.Config) error {
 	tomlFileName := "Cargo.toml"
 	logger.Printf("Create cargo %s file ....\n", tomlFileName)
 
@@ -102,7 +103,9 @@ func createCargoTomlFile(targetdir, appName, dovetailMacroPath string) error {
 		return err
 	}
 
-	data := CargoToml{Name: appName, Version: "0.0.1", DovetailMacroPath: dovetailMacroPath}
+	dependencies := getGitDependencies(appConfig)
+
+	data := CargoToml{Name: appName, Version: "0.0.1", DovetailMacroPath: dovetailMacroPath, GitDependencies: dependencies}
 
 	err = t.Execute(writer, data)
 	if err != nil {
@@ -110,6 +113,24 @@ func createCargoTomlFile(targetdir, appName, dovetailMacroPath string) error {
 	}
 	writer.Flush()
 	return nil
+}
+
+func getGitDependencies(appConfig *app.Config) []GitDependency {
+	dependencies := []GitDependency{}
+	// Get trigger dependencies
+	for _, trigger := range appConfig.Triggers {
+		url := trigger.Ref
+		id := getDependencyID(url)
+		// TODO remove ethereum branch
+		branch := "ethereum"
+		dependencies = append(dependencies, GitDependency{ID: id, URL: url, Branch: branch})
+	}
+	return dependencies
+}
+
+func getDependencyID(url string) string {
+	// Get last element of url
+	return filepath.Base(url)
 }
 
 func createMainFile(appDir, appName, modelFileName string) error {

@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 class {{.Class}}({{range $i, $attr := .Attributes}}{{if ne $i 0}}{{","}}{{end}} var {{$attr.Name}}: {{ $attr| GetKotlinType}}{{if eq $attr.IsOptional true}}?{{end}}{{end}}):net.corda.core.contracts.ContractState{
 {{else if eq .CordaClass "net.corda.core.contracts.LinearState"}}
 @CordaSerializable
-@BelongsToContract({{.Class}}Contract::class)
+@BelongsToContract({{.ContractClass}}::class)
 class {{.Class}}({{range $i, $attr := .Attributes}}{{if ne $i 0}}{{","}}{{end}}{{template "override" $attr}} {{$attr.Name}}: {{ $attr| GetKotlinType}}{{if eq $attr.IsOptional true}}?{{end}} {{end}}){{if .CordaClass}} : {{.CordaClass}}{{end}} {
 {{end}}   
     override val participants : List<AbstractParty>

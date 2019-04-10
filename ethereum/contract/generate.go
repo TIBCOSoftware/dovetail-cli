@@ -22,6 +22,7 @@ import (
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
 	wgutil "github.com/TIBCOSoftware/dovetail-cli/util"
 	"github.com/TIBCOSoftware/flogo-lib/app"
+	"github.com/TIBCOSoftware/flogo-lib/core/trigger"
 )
 
 var logger = log.New(os.Stdout, "", log.LstdFlags)
@@ -73,12 +74,12 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
-	err = createCargoTomlFile(rustProject.GetTargetDir(), appConfig.Name, d.Opts.DovetailMacroPath, appConfig)
+	err = createCargoTomlFile(rustProject.GetTargetDir(), d.Opts.DovetailMacroPath, appConfig)
 	if err != nil {
 		return err
 	}
 
-	err = createMainFile(rustProject.GetAppDir(), appConfig.Name, modelFileName)
+	err = createMainFile(rustProject.GetAppDir(), modelFileName, appConfig)
 	if err != nil {
 		return err
 	}
@@ -87,11 +88,11 @@ func (d *Generator) Generate() error {
 	return nil
 }
 
-func createCargoTomlFile(targetdir, appName, dovetailMacroPath string, appConfig *app.Config) error {
+func createCargoTomlFile(targetdir, dovetailMacroPath string, appConfig *app.Config) error {
 	tomlFileName := "Cargo.toml"
 	logger.Printf("Create cargo %s file ....\n", tomlFileName)
 
-	f, error := os.Create(path.Join(targetdir, appName, tomlFileName))
+	f, error := os.Create(path.Join(targetdir, appConfig.Name, tomlFileName))
 	if error != nil {
 		return error
 	}
@@ -109,7 +110,7 @@ func createCargoTomlFile(targetdir, appName, dovetailMacroPath string, appConfig
 		return err
 	}
 
-	data := CargoToml{Name: appName, Version: "0.0.1", DovetailMacroPath: dovetailMacroPath, GitDependencies: dependencies}
+	data := CargoToml{Name: appConfig.Name, Version: "0.0.1", DovetailMacroPath: dovetailMacroPath, GitDependencies: dependencies}
 
 	err = t.Execute(writer, data)
 	if err != nil {
@@ -121,8 +122,24 @@ func createCargoTomlFile(targetdir, appName, dovetailMacroPath string, appConfig
 
 func getGitDependencies(appConfig *app.Config) ([]GitDependency, error) {
 	dependencies := []GitDependency{}
+
+	tdependencies, err := getTriggerGitDependencies(appConfig.Triggers)
+	if err != nil {
+		return nil, err
+	}
 	// Get trigger dependencies
-	for _, trigger := range appConfig.Triggers {
+	dependencies = append(dependencies, tdependencies...)
+
+	// TODO get all other dependencies
+
+	return dependencies, nil
+}
+
+func getTriggerGitDependencies(triggers []*trigger.Config) ([]GitDependency, error) {
+	dependencies := []GitDependency{}
+
+	// Get trigger dependencies
+	for _, trigger := range triggers {
 		url, err := getDependencyURL(trigger.Ref)
 		if err != nil {
 			return nil, err
@@ -132,6 +149,7 @@ func getGitDependencies(appConfig *app.Config) ([]GitDependency, error) {
 		branch := "ethereum"
 		dependencies = append(dependencies, GitDependency{ID: id, URL: url, Branch: branch})
 	}
+
 	return dependencies, nil
 }
 
@@ -150,7 +168,7 @@ func getDependencyID(ref string) string {
 	return filepath.Base(ref)
 }
 
-func createMainFile(appDir, appName, modelFileName string) error {
+func createMainFile(appDir, modelFileName string, appConfig *app.Config) error {
 	mainFileName := "main.rs"
 	logger.Printf("Create main %s file ....\n", mainFileName)
 
@@ -167,7 +185,12 @@ func createMainFile(appDir, appName, modelFileName string) error {
 		return err
 	}
 
-	data := MainRs{ModelPath: path.Join("src", modelFileName)}
+	gitTriggerDependencies, err := getTriggerGitDependencies(appConfig.Triggers)
+	if err != nil {
+		return err
+	}
+
+	data := MainRs{ModelPath: path.Join("src", modelFileName), GitTriggerDependencies: gitTriggerDependencies}
 
 	err = t.Execute(writer, data)
 	if err != nil {

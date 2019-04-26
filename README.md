@@ -45,7 +45,7 @@ For Q&A you can contact us at tibcolabs@tibco.com.
 
 ### Fabric admin test fails on Ubuntu
 
-The current version of Fabric SDK supports Go 1.11.0-1.11.4. Thus, if the installation failed to download Go dependencies for Fabric SDK, you will need to download Go 1.11.4 and change the `$GOROOT` and `$PATH` environment variables to point to this version.
+The current version of Fabric SDK requires Go 1.11.0-1.11.4. Thus, if the installation failed to download Go dependencies for Fabric SDK, you will need to download Go 1.11.4 and change the `$GOROOT` and `$PATH` environment variables to point to this version. If you have installed a later version of Go, e.g., 1.11.6, you can edit the file `/path/to/fabric-sdk-go/ci.properties` and set `GO_MAX_VER=1.11.6`, and then use the following steps to install dependencies.
 
 If the `fabric admin tests` failed with the following error:
 ```

@@ -41,6 +41,8 @@ type DataState struct {
 	App            string
 	InitiatorFlows map[string][]model.ResourceAttribute
 	ResponderFlows map[string]string
+	//InitiatorFlowAnonymousParties map[string][]model.ResourceAttribute
+	ConfidentialFlows map[string]bool
 }
 
 var models map[string]*model.ResourceMetadataModel
@@ -141,7 +143,7 @@ func (g *Generator) GenerateApp(app *app.Config) error {
 }
 
 func compileAndJar(targetdir, ns, clazz, version string, pomf string) error {
-	logger.Printf("Compile smart contract artifacts")
+	logger.Printf("Compile cordapp artifacts")
 	pom, err := Asset("resources/" + pomf)
 	if err != nil {
 		return err
@@ -204,7 +206,7 @@ func createKotlinFile(dir, ns string, data interface{}, templateFile string, fil
 
 func prepareData(opts *Options, app *app.Config) (data DataState, err error) {
 	logger.Println("Prepare data ....")
-	data = DataState{NS: opts.Namespace, App: app.Name, InitiatorFlows: make(map[string][]model.ResourceAttribute), ResponderFlows: make(map[string]string)}
+	data = DataState{NS: opts.Namespace, App: app.Name, InitiatorFlows: make(map[string][]model.ResourceAttribute), ResponderFlows: make(map[string]string), ConfidentialFlows: make(map[string]bool)}
 
 	for _, trigger := range app.Triggers {
 		flowType := trigger.Settings["flowType"]
@@ -212,8 +214,9 @@ func prepareData(opts *Options, app *app.Config) (data DataState, err error) {
 			if flowType.(string) == "initiator" {
 				for _, handler := range trigger.Handlers {
 					flowName := getFlowName(handler.Action.Data)
-
+					data.ConfidentialFlows[flowName] = handler.Settings["useAnonymousIdentity"].(bool)
 					attrs := make([]model.ResourceAttribute, 0)
+					//	anons := make([]model.ResourceAttribute, 0)
 					input := handler.Outputs["transactionInput"]
 					if input != nil {
 						metadata := input.(map[string]interface{})["metadata"].(string)
@@ -223,17 +226,25 @@ func prepareData(opts *Options, app *app.Config) (data DataState, err error) {
 							}{}
 							json.Unmarshal([]byte(metadata), &desc)
 							data.InitiatorFlows[flowName] = model.ParseResourceModel(desc.Description).Attributes
+							/*
+								for _, attr := range data.InitiatorFlows[flowName] {
+									if attr.IsAnonymous {
+										anons = append(anons, attr)
+									}
+								}*/
 						} else {
 							data.InitiatorFlows[flowName] = attrs
 						}
 					} else {
 						data.InitiatorFlows[flowName] = attrs
 					}
+					//data.InitiatorFlowAnonymousParties[flowName] = anons
 				}
 			} else if flowType.(string) == "receiver" {
 				for _, handler := range trigger.Handlers {
 					flowName := getFlowName(handler.Action.Data)
 					data.ResponderFlows[flowName] = handler.Settings["initiatorFlow"].(string)
+					data.ConfidentialFlows[flowName] = handler.Settings["useAnonymousIdentity"].(bool)
 				}
 			}
 		}

@@ -32,11 +32,12 @@ type ResourceMetadataModel struct {
 }
 
 type ResourceAttribute struct {
-	Name       string `json:"name"`
-	Type       string `json:"type"`
-	IsRef      bool   `json:"isRef, omitempty"`
-	IsArray    bool   `json:"isArray, omitempty"`
-	IsOptional bool   `json:"isOptional, omitempty"`
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	IsRef       bool   `json:"isRef, omitempty"`
+	IsArray     bool   `json:"isArray, omitempty"`
+	IsOptional  bool   `json:"isOptional, omitempty"`
+	IsAnonymous bool   `json:"isAnonymous, omitempty`
 }
 
 func ParseResourceModel(jsonResource string) *ResourceMetadataModel {

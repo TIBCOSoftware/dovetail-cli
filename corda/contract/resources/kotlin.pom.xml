@@ -105,7 +105,15 @@
                 <include>com.tibco.dovetail:*</include>
               </includes>
              </artifactSet>
-             
+             <filters>
+              <filter>
+                <artifact>com.tibco.dovetail:*</artifact>
+                <excludes>
+                 <exclude>com/tibco/dovetail/container/cordapp/**/*</exclude>
+                  <exclude>cordapp/**/*</exclude>
+              </excludes>
+              </filter>
+             </filters>
             </configuration>
           </execution>
         </executions>

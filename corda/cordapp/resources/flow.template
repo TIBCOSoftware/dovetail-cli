@@ -10,12 +10,12 @@ import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import java.util.*
 {{$app := .App}}
-{{$initiators := .InitiatorFlows }}
-{{range $responder, $initiator := .ResponderFlows}}
-{{$attrs := index $initiators $initiator}}
+{{$ConfidentialFlows := .ConfidentialFlows}}
+{{range $initiator, $attrs := .InitiatorFlows }}
+{{$isConfidential := index $ConfidentialFlows $initiator}}
 @InitiatingFlow
 @StartableByRPC
-class {{$initiator}}({{range $i, $attr := $attrs}}{{if ne $i 0}}{{","}}{{end}}val {{$attr.Name}}: {{ $attr.Type}} {{end}}): AppFlow(true) {
+class {{$initiator}}({{range $i, $attr := $attrs}}{{if ne $i 0}}{{","}}{{end}}val {{$attr.Name}}: {{ $attr.Type}} {{end}}): AppFlow(true,{{$isConfidential}}) {
 
     override val progressTracker = ProgressTracker()
 
@@ -24,17 +24,26 @@ class {{$initiator}}({{range $i, $attr := $attrs}}{{if ne $i 0}}{{","}}{{end}}va
         var args = LinkedHashMap<String, Any>()
         {{range $i, $attr := $attrs}}
         args.put("{{$attr.Name}}", {{$attr.Name}})
+        {{end}} 
+        setOurIdentity()
+        {{if eq $isConfidential true}}
+        swapIdentitiesInitiator(args)
         {{end}}
         runFlow("{{$initiator}}", {{$app}}.getTrigger("{{$initiator}}"), args)
         return initiatorSignAndCommit()
     }
 }
-
+{{end}}
+{{range $responder, $initiator := .ResponderFlows}}
+{{$isConfidential := index $ConfidentialFlows $responder}}
 @InitiatedBy({{$initiator}}::class)
-class {{$responder}}(val counterpartySession: FlowSession) : AppFlow(false) {
+class {{$responder}}(val counterpartySession: FlowSession) : AppFlow(false,{{$isConfidential}}) {
 
     @Suspendable
     override fun call(): SignedTransaction {
+        {{if eq $isConfidential true}}
+        swapIdentitiesReceiver(counterpartySession)
+        {{end}}
         this.runFlow("{{$responder}}", {{$app}}.getTrigger("{{$responder}}"), null)
         val verifyFlow = DefaultSignTransactionFlow(counterpartySession)
         return receiverSignAndCommit(verifyFlow, counterpartySession)

@@ -84,6 +84,11 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
+	err = createLibFile(rustProject.GetAppDir(), modelFileName, appConfig)
+	if err != nil {
+		return err
+	}
+
 	logger.Println("Generating Ethereum smart contract... Done")
 	return nil
 }
@@ -145,8 +150,7 @@ func getTriggerGitDependencies(triggers []*trigger.Config) ([]GitDependency, err
 			return nil, err
 		}
 		id := getDependencyID(trigger.Ref)
-		// TODO remove ethereum branch
-		branch := "ethereum"
+		branch := "master"
 		dependencies = append(dependencies, GitDependency{ID: id, URL: url, Branch: branch})
 	}
 
@@ -191,6 +195,38 @@ func createMainFile(appDir, modelFileName string, appConfig *app.Config) error {
 	}
 
 	data := MainRs{ModelPath: path.Join("src", modelFileName), GitTriggerDependencies: gitTriggerDependencies}
+
+	err = t.Execute(writer, data)
+	if err != nil {
+		return err
+	}
+	writer.Flush()
+	return nil
+}
+
+func createLibFile(appDir, modelFileName string, appConfig *app.Config) error {
+	libFileName := "lib.rs"
+	logger.Printf("Create lib %s file ....\n", libFileName)
+
+	f, error := os.Create(path.Join(appDir, libFileName))
+	if error != nil {
+		return error
+	}
+	defer f.Close()
+
+	writer := bufio.NewWriter(f)
+
+	t, err := template.New("lib_rs").Parse(LibRsTemplate)
+	if err != nil {
+		return err
+	}
+
+	gitTriggerDependencies, err := getTriggerGitDependencies(appConfig.Triggers)
+	if err != nil {
+		return err
+	}
+
+	data := LibRs{ModelPath: path.Join("src", modelFileName), GitTriggerDependencies: gitTriggerDependencies}
 
 	err = t.Execute(writer, data)
 	if err != nil {

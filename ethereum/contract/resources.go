@@ -28,11 +28,15 @@ version = "{{.Version}}"
 authors = ["user <myemail@email.com>"]
 edition = "2018"
 
+[lib]
+name = "{{.Name}}"
+path = "src/lib.rs"
+
+[[bin]]
+name = "{{.Name}}"
+path = "src/main.rs"
+
 [dependencies]
-dovetail_macro_derive = { path = "{{.DovetailMacroPath}}" }
-serde_json = "1.0"
-serde_derive = "1.0"
-serde = "1.0"
 {{range $gitDependency := .GitDependencies}}{{$gitDependency.ID}} = { git = "{{$gitDependency.URL}}", branch = "{{$gitDependency.Branch}}" } {{end}}
 `
 
@@ -43,6 +47,25 @@ type MainRs struct {
 }
 
 // MainRsTemplate main.rs template
-const MainRsTemplate = `
-{{range $gitTriggerDependency := .GitTriggerDependencies}}extern crate {{$gitTriggerDependency.ID}};{{end}}
+const MainRsTemplate = `{{range $gitTriggerDependency := .GitTriggerDependencies}}extern crate {{$gitTriggerDependency.ID}};{{end}}
+
+{{range $gitTriggerDependency := .GitTriggerDependencies}}use {{$gitTriggerDependency.ID}}::start_{{$gitTriggerDependency.ID}};{{end}}
+
+fn main(){
+	// Calling each trigger start method
+	
+	{{range $gitTriggerDependency := .GitTriggerDependencies}}start_{{$gitTriggerDependency.ID}}();{{end}}
+}
+`
+
+// LibRs struct for lib rs template
+type LibRs struct {
+	ModelPath              string
+	GitTriggerDependencies []GitDependency
+}
+
+// LibRsTemplate lib.rs template
+const LibRsTemplate = `{{range $gitTriggerDependency := .GitTriggerDependencies}}extern crate {{$gitTriggerDependency.ID}};{{end}}
+
+{{range $gitTriggerDependency := .GitTriggerDependencies}}use {{$gitTriggerDependency.ID}}::start_{{$gitTriggerDependency.ID}};{{end}}
 `

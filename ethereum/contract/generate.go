@@ -29,7 +29,7 @@ var logger = log.New(os.Stdout, "", log.LstdFlags)
 
 const (
 	dovetailDeriveID     = "dovetail_derive"
-	dovetailDeriveURL    = "github.com/torresashjian/dovetail-rust-lib/dovetail_derive"
+	dovetailDeriveURL    = "https://github.com/torresashjian/dovetail-rust-lib/dovetail_derive"
 	dovetailDeriveBranch = "issue-1/first-app"
 )
 

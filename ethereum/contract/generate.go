@@ -27,6 +27,12 @@ import (
 
 var logger = log.New(os.Stdout, "", log.LstdFlags)
 
+const (
+	dovetailDeriveID     = "dovetail_derive"
+	dovetailDeriveURL    = "github.com/torresashjian/dovetail-rust-lib/dovetail_derive"
+	dovetailDeriveBranch = "issue-1/first-app"
+)
+
 // Generator defines the generator attributes
 type Generator struct {
 	Opts *GenOptions
@@ -67,7 +73,7 @@ func (d *Generator) Generate() error {
 
 	defer rustProject.Cleanup()
 
-	modelFileName := fmt.Sprintf("%s.%s", appConfig.Name, "json")
+	modelFileName := "app.json"
 
 	err = wgutil.CopyFile(d.Opts.ModelFile, filepath.Join(rustProject.GetAppDir(), modelFileName))
 	if err != nil {
@@ -128,6 +134,14 @@ func createCargoTomlFile(targetdir, dovetailMacroPath string, appConfig *app.Con
 func getGitDependencies(appConfig *app.Config) ([]GitDependency, error) {
 	dependencies := []GitDependency{}
 
+	// Get internal dovetail dependencies
+	dovedependencies, err := getDovetailGitDependencies(appConfig)
+	if err != nil {
+		return nil, err
+	}
+	// Get Dovetail dependencies
+	dependencies = append(dependencies, dovedependencies...)
+
 	tdependencies, err := getTriggerGitDependencies(appConfig.Triggers)
 	if err != nil {
 		return nil, err
@@ -135,7 +149,18 @@ func getGitDependencies(appConfig *app.Config) ([]GitDependency, error) {
 	// Get trigger dependencies
 	dependencies = append(dependencies, tdependencies...)
 
-	// TODO get all other dependencies
+	// TODO get all other dependencies (activities, etc...)
+
+	return dependencies, nil
+}
+
+func getDovetailGitDependencies(appConfig *app.Config) ([]GitDependency, error) {
+	dependencies := []GitDependency{}
+
+	// Get dovetail derive
+	dovetailDerive := GitDependency{ID: dovetailDeriveID, URL: dovetailDeriveURL, Branch: dovetailDeriveBranch}
+
+	dependencies = append(dependencies, dovetailDerive)
 
 	return dependencies, nil
 }
@@ -150,7 +175,8 @@ func getTriggerGitDependencies(triggers []*trigger.Config) ([]GitDependency, err
 			return nil, err
 		}
 		id := getDependencyID(trigger.Ref)
-		branch := "master"
+		// TODO pass this as parameter before release
+		branch := "issue-41/sawtooth-contrib"
 		dependencies = append(dependencies, GitDependency{ID: id, URL: url, Branch: branch})
 	}
 
@@ -158,6 +184,8 @@ func getTriggerGitDependencies(triggers []*trigger.Config) ([]GitDependency, err
 }
 
 func getDependencyURL(ref string) (string, error) {
+	// Remove initial https://
+	ref = strings.TrimPrefix(ref, "https://")
 	seg := strings.Split(ref, "/")
 	if len(seg) < 3 {
 		return "", fmt.Errorf("Invalid dependency URL %s", ref)
@@ -189,12 +217,17 @@ func createMainFile(appDir, modelFileName string, appConfig *app.Config) error {
 		return err
 	}
 
-	gitTriggerDependencies, err := getTriggerGitDependencies(appConfig.Triggers)
+	doveInternalMainDependencies, err := getDoveInternalMainDependencies()
 	if err != nil {
 		return err
 	}
 
-	data := MainRs{ModelPath: path.Join("src", modelFileName), GitTriggerDependencies: gitTriggerDependencies}
+	triggerMainDependencies, err := getTriggerMainDependencies(appConfig)
+	if err != nil {
+		return err
+	}
+
+	data := mergeMainRs(doveInternalMainDependencies, triggerMainDependencies)
 
 	err = t.Execute(writer, data)
 	if err != nil {
@@ -221,12 +254,17 @@ func createLibFile(appDir, modelFileName string, appConfig *app.Config) error {
 		return err
 	}
 
-	gitTriggerDependencies, err := getTriggerGitDependencies(appConfig.Triggers)
+	doveInternalLibDependencies, err := getDoveInternalLibDependencies()
 	if err != nil {
 		return err
 	}
 
-	data := LibRs{ModelPath: path.Join("src", modelFileName), GitTriggerDependencies: gitTriggerDependencies}
+	triggerLibDependencies, err := getTriggerLibDependencies(appConfig)
+	if err != nil {
+		return err
+	}
+
+	data := mergeLibRs(doveInternalLibDependencies, triggerLibDependencies)
 
 	err = t.Execute(writer, data)
 	if err != nil {
@@ -234,4 +272,150 @@ func createLibFile(appDir, modelFileName string, appConfig *app.Config) error {
 	}
 	writer.Flush()
 	return nil
+}
+
+func getDoveInternalMainDependencies() ([]MainRs, error) {
+	rs := []MainRs{}
+	// Add dovetailDerive crate
+	dovetailDeriveCrates := map[string]struct{}{
+		dovetailDeriveID: {},
+	}
+	// Add dovetailDerive::app use
+	dovetailDeriveUses := map[string]struct{}{
+		fmt.Sprintf("%s::%s", dovetailDeriveID, "app"): {},
+	}
+	// Add dovetailDerive::app derive
+	dovetailDeriveDerives := map[string]struct{}{
+		"app": {},
+	}
+	dovetailDerive := MainRs{Crates: dovetailDeriveCrates, Uses: dovetailDeriveUses, Derives: dovetailDeriveDerives}
+	rs = append(rs, dovetailDerive)
+	return rs, nil
+}
+
+func getTriggerMainDependencies(appConfig *app.Config) ([]MainRs, error) {
+	rs := []MainRs{}
+
+	// Get trigger dependencies
+	for _, trigger := range appConfig.Triggers {
+		// Add crates
+		crates := map[string]struct{}{
+			getDependencyID(trigger.Ref): {},
+		}
+		startFn := fmt.Sprintf("%s%s", "start_", getDependencyID(trigger.Ref))
+		// Add uses
+		uses := map[string]struct{}{
+			// Start use
+			fmt.Sprintf("%s::%s", getDependencyID(trigger.Ref), startFn): {},
+		}
+		// Add calls
+		calls := map[string]struct{}{
+			startFn: {},
+		}
+		// Add derives
+		derives := map[string]struct{}{}
+		newrs := MainRs{Crates: crates, Uses: uses, Calls: calls, Derives: derives}
+		rs = append(rs, newrs)
+	}
+	return rs, nil
+}
+
+func mergeMaps(maps ...map[string]struct{}) map[string]struct{} {
+	result := make(map[string]struct{})
+	for _, m := range maps {
+		for k, v := range m {
+			result[k] = v
+		}
+	}
+	return result
+}
+
+func mergeMainRs(rsAs, rsBs []MainRs) MainRs {
+	crates := make(map[string]struct{})
+	uses := make(map[string]struct{})
+	calls := make(map[string]struct{})
+	derives := make(map[string]struct{})
+	for _, rsA := range rsAs {
+		crates = mergeMaps(crates, rsA.Crates)
+		uses = mergeMaps(uses, rsA.Uses)
+		calls = mergeMaps(calls, rsA.Calls)
+		derives = mergeMaps(derives, rsA.Derives)
+	}
+	for _, rsB := range rsBs {
+		crates = mergeMaps(crates, rsB.Crates)
+		uses = mergeMaps(uses, rsB.Uses)
+		calls = mergeMaps(calls, rsB.Calls)
+		derives = mergeMaps(derives, rsB.Derives)
+	}
+	return MainRs{
+		Crates:  crates,
+		Uses:    uses,
+		Calls:   calls,
+		Derives: derives,
+	}
+}
+
+func mergeLibRs(rsAs, rsBs []LibRs) LibRs {
+	crates := make(map[string]struct{})
+	uses := make(map[string]struct{})
+	calls := make(map[string]struct{})
+	derives := make(map[string]struct{})
+	for _, rsA := range rsAs {
+		crates = mergeMaps(crates, rsA.Crates)
+		uses = mergeMaps(uses, rsA.Uses)
+		calls = mergeMaps(calls, rsA.Calls)
+		derives = mergeMaps(derives, rsA.Derives)
+	}
+	for _, rsB := range rsBs {
+		crates = mergeMaps(crates, rsB.Crates)
+		uses = mergeMaps(uses, rsB.Uses)
+		calls = mergeMaps(calls, rsB.Calls)
+		derives = mergeMaps(derives, rsB.Derives)
+	}
+	return LibRs{
+		Crates:  crates,
+		Uses:    uses,
+		Calls:   calls,
+		Derives: derives,
+	}
+}
+
+func getDoveInternalLibDependencies() ([]LibRs, error) {
+	rs := []LibRs{}
+	// Add dovetailDerive crate
+	dovetailDeriveCrates := map[string]struct{}{
+		dovetailDeriveID: {},
+	}
+	// Add dovetailDerive::app use
+	dovetailDeriveUses := map[string]struct{}{
+		fmt.Sprintf("%s::%s", dovetailDeriveID, "app"): {},
+	}
+	dovetailDerive := LibRs{Crates: dovetailDeriveCrates, Uses: dovetailDeriveUses}
+	rs = append(rs, dovetailDerive)
+	return rs, nil
+}
+
+func getTriggerLibDependencies(appConfig *app.Config) ([]LibRs, error) {
+	rs := []LibRs{}
+
+	// Get trigger dependencies
+	for _, trigger := range appConfig.Triggers {
+		// Add crates
+		crates := map[string]struct{}{
+			getDependencyID(trigger.Ref): {},
+		}
+		startFn := fmt.Sprintf("%s%s", "start_", getDependencyID(trigger.Ref))
+		// Add uses
+		uses := map[string]struct{}{
+			// Start use
+			fmt.Sprintf("%s::%s", getDependencyID(trigger.Ref), startFn): {},
+		}
+		// Add calls
+		calls := map[string]struct{}{}
+		// Add derives
+		derives := map[string]struct{}{}
+		newrs := LibRs{Crates: crates, Uses: uses, Calls: calls, Derives: derives}
+		rs = append(rs, newrs)
+	}
+	return rs, nil
 }

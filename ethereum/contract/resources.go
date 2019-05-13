@@ -37,35 +37,46 @@ name = "{{.Name}}"
 path = "src/main.rs"
 
 [dependencies]
-{{range $gitDependency := .GitDependencies}}{{$gitDependency.ID}} = { git = "{{$gitDependency.URL}}", branch = "{{$gitDependency.Branch}}" } {{end}}
+{{range $gitDependency := .GitDependencies}}{{$gitDependency.ID}} = { git = "{{$gitDependency.URL}}", branch = "{{$gitDependency.Branch}}" }
+{{end}}
 `
 
 // MainRs struct for main rs template
 type MainRs struct {
-	ModelPath              string
-	GitTriggerDependencies []GitDependency
+	Crates  map[string]struct{}
+	Uses    map[string]struct{}
+	Calls   map[string]struct{}
+	Derives map[string]struct{}
 }
 
 // MainRsTemplate main.rs template
-const MainRsTemplate = `{{range $gitTriggerDependency := .GitTriggerDependencies}}extern crate {{$gitTriggerDependency.ID}};{{end}}
+const MainRsTemplate = `{{range $crate, $_ := .Crates}}extern crate {{$crate}};
+{{end}}
 
-{{range $gitTriggerDependency := .GitTriggerDependencies}}use {{$gitTriggerDependency.ID}}::start_{{$gitTriggerDependency.ID}};{{end}}
+{{range $use, $_ := .Uses}}use {{$use}};
+{{end}}
 
+{{range $derive, $_ := .Derives}}
+#[{{$derive}}()];{{end}}
 fn main(){
 	// Calling each trigger start method
-	
-	{{range $gitTriggerDependency := .GitTriggerDependencies}}start_{{$gitTriggerDependency.ID}}();{{end}}
+	{{range $call, $_ := .Calls}}{{$call}}();
+	{{end}}
 }
 `
 
 // LibRs struct for lib rs template
 type LibRs struct {
-	ModelPath              string
-	GitTriggerDependencies []GitDependency
+	Crates  map[string]struct{}
+	Uses    map[string]struct{}
+	Calls   map[string]struct{}
+	Derives map[string]struct{}
 }
 
 // LibRsTemplate lib.rs template
-const LibRsTemplate = `{{range $gitTriggerDependency := .GitTriggerDependencies}}extern crate {{$gitTriggerDependency.ID}};{{end}}
+const LibRsTemplate = `{{range $crate, $_ := .Crates}}extern crate {{$crate}};
+{{end}}
 
-{{range $gitTriggerDependency := .GitTriggerDependencies}}use {{$gitTriggerDependency.ID}}::start_{{$gitTriggerDependency.ID}};{{end}}
+{{range $use, $_ := .Uses}}use {{$use}};
+{{end}}
 `

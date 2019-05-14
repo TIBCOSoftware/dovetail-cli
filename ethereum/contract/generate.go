@@ -75,7 +75,7 @@ func (d *Generator) Generate() error {
 
 	modelFileName := "app.json"
 
-	err = wgutil.CopyFile(d.Opts.ModelFile, filepath.Join(rustProject.GetAppDir(), modelFileName))
+	err = wgutil.CopyFile(d.Opts.ModelFile, filepath.Join(rustProject.GetTargetDir(), appConfig.Name, modelFileName))
 	if err != nil {
 		return err
 	}
@@ -157,11 +157,11 @@ func getGitDependencies(appConfig *app.Config) ([]GitDependency, error) {
 func getDovetailGitDependencies(appConfig *app.Config) ([]GitDependency, error) {
 	dependencies := []GitDependency{}
 
-	// Get dovetail derive
+	/*// Get dovetail derive
 	dovetailDerive := GitDependency{ID: dovetailDeriveID, URL: dovetailDeriveURL, Branch: dovetailDeriveBranch}
 
 	dependencies = append(dependencies, dovetailDerive)
-
+	*/
 	return dependencies, nil
 }
 
@@ -276,7 +276,7 @@ func createLibFile(appDir, modelFileName string, appConfig *app.Config) error {
 
 func getDoveInternalMainDependencies() ([]MainRs, error) {
 	rs := []MainRs{}
-	// Add dovetailDerive crate
+	/*// Add dovetailDerive crate
 	dovetailDeriveCrates := map[string]struct{}{
 		dovetailDeriveID: {},
 	}
@@ -289,7 +289,7 @@ func getDoveInternalMainDependencies() ([]MainRs, error) {
 		"app": {},
 	}
 	dovetailDerive := MainRs{Crates: dovetailDeriveCrates, Uses: dovetailDeriveUses, Derives: dovetailDeriveDerives}
-	rs = append(rs, dovetailDerive)
+	rs = append(rs, dovetailDerive)*/
 	return rs, nil
 }
 
@@ -382,7 +382,7 @@ func mergeLibRs(rsAs, rsBs []LibRs) LibRs {
 
 func getDoveInternalLibDependencies() ([]LibRs, error) {
 	rs := []LibRs{}
-	// Add dovetailDerive crate
+	/*// Add dovetailDerive crate
 	dovetailDeriveCrates := map[string]struct{}{
 		dovetailDeriveID: {},
 	}
@@ -391,7 +391,7 @@ func getDoveInternalLibDependencies() ([]LibRs, error) {
 		fmt.Sprintf("%s::%s", dovetailDeriveID, "app"): {},
 	}
 	dovetailDerive := LibRs{Crates: dovetailDeriveCrates, Uses: dovetailDeriveUses}
-	rs = append(rs, dovetailDerive)
+	rs = append(rs, dovetailDerive)*/
 	return rs, nil
 }
 

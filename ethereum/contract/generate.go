@@ -29,8 +29,8 @@ var logger = log.New(os.Stdout, "", log.LstdFlags)
 
 const (
 	dovetailDeriveID     = "dovetail_derive"
-	dovetailDeriveURL    = "https://github.com/torresashjian/dovetail-rust-lib/dovetail_derive"
-	dovetailDeriveBranch = "issue-1/first-app"
+	dovetailDeriveURL    = "https://github.com/torresashjian/x/dovetail_derive"
+	dovetailDeriveBranch = ""
 )
 
 // Generator defines the generator attributes
@@ -175,8 +175,7 @@ func getTriggerGitDependencies(triggers []*trigger.Config) ([]GitDependency, err
 			return nil, err
 		}
 		id := getDependencyID(trigger.Ref)
-		// TODO pass this as parameter before release
-		branch := "issue-41/sawtooth-contrib"
+		branch := ""
 		dependencies = append(dependencies, GitDependency{ID: id, URL: url, Branch: branch})
 	}
 

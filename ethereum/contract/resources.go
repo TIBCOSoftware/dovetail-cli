@@ -15,9 +15,8 @@ type CargoToml struct {
 
 // GitDependency struct for cargo toml template dependencies
 type GitDependency struct {
-	ID     string
-	URL    string
-	Branch string
+	ID  string
+	URL string
 }
 
 // CargoTomlTemplate cargo toml template
@@ -37,7 +36,7 @@ name = "{{.Name}}"
 path = "src/main.rs"
 
 [dependencies]
-{{range $gitDependency := .GitDependencies}}{{$gitDependency.ID}} = { git = "{{$gitDependency.URL}}", branch = "{{$gitDependency.Branch}}" }
+{{range $gitDependency := .GitDependencies}}{{$gitDependency.ID}} = { git = "{{$gitDependency.URL}}" }
 {{end}}
 `
 

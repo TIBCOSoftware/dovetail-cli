@@ -28,9 +28,8 @@ import (
 var logger = log.New(os.Stdout, "", log.LstdFlags)
 
 const (
-	dovetailDeriveID     = "dovetail_derive"
-	dovetailDeriveURL    = "https://github.com/torresashjian/x/dovetail_derive"
-	dovetailDeriveBranch = ""
+	dovetailDeriveID  = "dovetail_derive"
+	dovetailDeriveURL = "https://github.com/torresashjian/x/dovetail_derive"
 )
 
 // Generator defines the generator attributes
@@ -158,7 +157,7 @@ func getDovetailGitDependencies(appConfig *app.Config) ([]GitDependency, error) 
 	dependencies := []GitDependency{}
 
 	/*// Get dovetail derive
-	dovetailDerive := GitDependency{ID: dovetailDeriveID, URL: dovetailDeriveURL, Branch: dovetailDeriveBranch}
+	dovetailDerive := GitDependency{ID: dovetailDeriveID, URL: dovetailDeriveURL}
 
 	dependencies = append(dependencies, dovetailDerive)
 	*/
@@ -175,8 +174,7 @@ func getTriggerGitDependencies(triggers []*trigger.Config) ([]GitDependency, err
 			return nil, err
 		}
 		id := getDependencyID(trigger.Ref)
-		branch := ""
-		dependencies = append(dependencies, GitDependency{ID: id, URL: url, Branch: branch})
+		dependencies = append(dependencies, GitDependency{ID: id, URL: url})
 	}
 
 	return dependencies, nil

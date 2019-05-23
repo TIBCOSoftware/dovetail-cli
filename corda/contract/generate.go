@@ -13,7 +13,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"strconv"
 	"strings"
@@ -178,14 +177,19 @@ func compileAndJar(targetdir, ns, clazz, version string, pomf string) error {
 	if err != nil {
 		return err
 	}
-	args := []string{"package", "-f", path.Join(targetdir, pomf), "-DbaseDir=" + targetdir, "-Dversion=" + version, "-DgroupId=" + ns, "-DartifactId=" + clazz}
+	err = wgutil.MvnPackage(ns, clazz, version, pomf, targetdir)
+	/*args := []string{"install", "-f", path.Join(targetdir, pomf), "-DbaseDir=" + targetdir, "-Dversion=" + version, "-DgroupId=" + ns, "-DartifactId=" + clazz}
 	cmd := exec.Command("mvn", args...)
 	logger.Printf("mvn command %v\n", cmd.Args)
-	out, err := cmd.Output()
+	out, err := cmd.Output()*/
 	if err != nil {
-		return fmt.Errorf("compileAndJar err %v", string(out))
+		return err
 	}
 
+	err = wgutil.MvnInstall(ns, clazz, version, fmt.Sprintf("%s/kotlin-%s-%s.jar", targetdir, clazz, version))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 func createConceptKotlinFiles(dir, template string, concepts []DataState) error {

@@ -3,7 +3,9 @@ package util
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
+	"os/exec"
 	"path"
 )
 
@@ -42,4 +44,30 @@ func CreateTargetDirs(targetPath string) string {
 	os.RemoveAll(targetPath)
 	target := CreateDirIfNotExist(targetPath)
 	return target
+}
+
+func MvnPackage(groupId, artifactId, version, pomf, targetdir string) error {
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+	args := []string{"package", "-f", path.Join(targetdir, pomf), "-DbaseDir=" + targetdir, "-Dversion=" + version, "-DgroupId=" + groupId, "-DartifactId=" + artifactId}
+	cmd := exec.Command("mvn", args...)
+	logger.Printf("mvn command %v\n", cmd.Args)
+	out, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("MvnPackage compile err %v", string(out))
+	}
+	fmt.Println(string(out))
+	return nil
+}
+
+func MvnInstall(groupId, artifactId, version, file string) error {
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+	args := []string{"org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file", "-Dpackaging=jar", "-DgeneratePom=true", "-Dversion=" + version, "-DgroupId=" + groupId, "-DartifactId=" + artifactId, "-Dfile=" + file}
+	cmd := exec.Command("mvn", args...)
+	logger.Printf("mvn command %v\n", cmd.Args)
+	out, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("MvnInstall err %v", string(out))
+	}
+	fmt.Println(string(out))
+	return nil
 }

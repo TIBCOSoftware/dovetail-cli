@@ -34,13 +34,14 @@
   	<dependency>
   		<groupId>com.tibco.dovetail</groupId>
   		<artifactId>dovetail-corda</artifactId>
-  		<version>[0.1.3, )</version>
+  		<version>[0.1.4, )</version>
   	</dependency>
     <dependency>
   		<groupId>com.palominolabs.metrics</groupId>
   		<artifactId>metrics-new-relic</artifactId>
   		<version>[1.0.5,)</version>
   	</dependency>
+    %%external%%
   </dependencies>
   <repositories>
     <repository>
@@ -50,6 +51,14 @@
       <id>central</id>
       <name>Central Repository</name>
       <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+     <repository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>spring</id>
+      <name>spring plugin Repository</name>
+      <url> http://repo.spring.io/plugins-release/</url>
     </repository>
   </repositories>
   <build>
@@ -66,10 +75,26 @@
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>2.3.1</version>
+        <version>3.1.2</version>
         <configuration>
             <outputDirectory>${baseDir}</outputDirectory>
         </configuration>
+        <executions>
+          <execution>
+            <id>impl</id>
+            <goals><goal>jar</goal></goals>
+            <phase>package</phase>
+            <configuration>
+              <finalName>kotlin-${project.artifactId}-${project.version}</finalName>
+              <encoding>ISO-8859-1</encoding>
+              <classifier>api</classifier> <!-- This will be appended with the jar created with finalName tag value if present-->
+              <excludes>
+                <exclude>**/*Impl.class</exclude>
+                <exclude>**/app.json</exclude>                      
+              </excludes>   
+            </configuration>
+          </execution>
+        </executions>
     </plugin>
 		<plugin>
             <artifactId>kotlin-maven-plugin</artifactId>

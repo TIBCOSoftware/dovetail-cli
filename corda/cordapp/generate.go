@@ -9,9 +9,9 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 	"text/template"
@@ -30,17 +30,27 @@ type Generator struct {
 }
 
 type Options struct {
-	ModelFile string
-	Version   string
-	TargetDir string
-	Namespace string
+	ModelFile      string
+	Version        string
+	TargetDir      string
+	Namespace      string
+	DependencyFile string
+	APIOnly        bool
 }
 
+type InitiatorFlowConfig struct {
+	Attrs                     []model.ResourceAttribute
+	HasObservers              bool
+	SendTxnToObserverManually bool
+}
 type DataState struct {
 	NS             string
 	App            string
-	InitiatorFlows map[string][]model.ResourceAttribute
+	InitiatorFlows map[string]InitiatorFlowConfig
 	ResponderFlows map[string]string
+	ObserverFlows  map[string]string
+	//InitiatorFlowAnonymousParties map[string][]model.ResourceAttribute
+	ConfidentialFlows map[string]bool
 }
 
 var models map[string]*model.ResourceMetadataModel
@@ -51,8 +61,8 @@ func NewGenerator(opts *Options) *Generator {
 }
 
 // NewOptions is the options constructor
-func NewOptions(flowModel string, version string, target, ns string) *Options {
-	return &Options{ModelFile: flowModel, Version: version, TargetDir: target, Namespace: ns}
+func NewOptions(flowModel string, version string, target, ns string, dependencyFile string, apiOnly bool) *Options {
+	return &Options{ModelFile: flowModel, Version: version, TargetDir: target, Namespace: ns, DependencyFile: dependencyFile, APIOnly: apiOnly}
 }
 
 // Generate generates a CordAppfor the given options
@@ -92,21 +102,44 @@ func (g *Generator) GenerateApp(app *app.Config) error {
 		return fmt.Errorf("createAppKotlinFile app.template err %v", err)
 	}
 
-	//create flow files
-	err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "flow.template", "Flows.kt")
-	if err != nil {
-		return fmt.Errorf("createFlowKotlinFile flow.template err %v", err)
+	//create abstract flow files
+	if len(data.InitiatorFlows) > 0 {
+		err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "abstractflow.template", "AbstractFlows.kt")
+		if err != nil {
+			return fmt.Errorf("createFlowKotlinFile abstractflow.template err %v", err)
+		}
 	}
 
+	if !g.Opts.APIOnly {
+		//create flow files
+		err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "flow.template", "Flows.kt")
+		if err != nil {
+			return fmt.Errorf("createFlowKotlinFile flow.template err %v", err)
+		}
+	}
 	//create Resource
 	err = createResourceFiles(resourcedir, g.Opts, models)
 	if err != nil {
 		return fmt.Errorf("createResourceFiles err %v", err)
 	}
 
-	err = compileAndJar(javaProject.GetAppDir(), g.Opts.Namespace, data.App, g.Opts.Version, "kotlin.pom.xml")
+	err = compileAndJar(javaProject.GetAppDir(), g.Opts.Namespace, data.App, g.Opts.Version, "kotlin.pom.xml", g.Opts.DependencyFile)
 	if err != nil {
-		return fmt.Errorf("compileAndJar kotlin.pom.xml err %v", err)
+		return err
+	}
+
+	if len(data.InitiatorFlows) > 0 {
+		err = wgutil.MvnInstall(g.Opts.Namespace, data.App+"-api", g.Opts.Version, fmt.Sprintf("%s/kotlin-%s-%s-api.jar", javaProject.GetAppDir(), data.App, g.Opts.Version))
+		if err != nil {
+			return err
+		}
+	}
+
+	if !g.Opts.APIOnly {
+		err = wgutil.MvnInstall(g.Opts.Namespace, data.App, g.Opts.Version, fmt.Sprintf("%s/kotlin-%s-%s.jar", javaProject.GetAppDir(), data.App, g.Opts.Version))
+		if err != nil {
+			return err
+		}
 	}
 
 	//Cleanup
@@ -140,22 +173,33 @@ func (g *Generator) GenerateApp(app *app.Config) error {
 	return nil
 }
 
-func compileAndJar(targetdir, ns, clazz, version string, pomf string) error {
-	logger.Printf("Compile smart contract artifacts")
+func compileAndJar(targetdir, ns, clazz, version string, pomf string, dependencyFile string) error {
+	logger.Printf("Compile cordapp artifacts")
 	pom, err := Asset("resources/" + pomf)
 	if err != nil {
 		return err
 	}
-	err = wgutil.CopyContent(pom, path.Join(targetdir, pomf))
+
+	dep := ""
+
+	if dependencyFile != "" {
+		deppom, err := ioutil.ReadFile(dependencyFile)
+		if err != nil {
+			return err
+		}
+
+		dep = string(deppom)
+	}
+	newpom := strings.Replace(string(pom), "%%external%%", dep, 1)
+
+	err = wgutil.CopyContent([]byte(newpom), path.Join(targetdir, pomf))
 	if err != nil {
 		return err
 	}
-	args := []string{"package", "-f", path.Join(targetdir, pomf), "-DbaseDir=" + targetdir, "-Dversion=" + version, "-DgroupId=" + ns, "-DartifactId=" + clazz}
-	cmd := exec.Command("mvn", args...)
-	logger.Printf("mvn command %v\n", cmd.Args)
-	out, err := cmd.Output()
+
+	err = wgutil.MvnPackage(ns, clazz, version, pomf, targetdir)
 	if err != nil {
-		return fmt.Errorf("compileAndJar err %v", string(out))
+		return err
 	}
 
 	return nil
@@ -204,7 +248,7 @@ func createKotlinFile(dir, ns string, data interface{}, templateFile string, fil
 
 func prepareData(opts *Options, app *app.Config) (data DataState, err error) {
 	logger.Println("Prepare data ....")
-	data = DataState{NS: opts.Namespace, App: app.Name, InitiatorFlows: make(map[string][]model.ResourceAttribute), ResponderFlows: make(map[string]string)}
+	data = DataState{NS: opts.Namespace, App: app.Name, InitiatorFlows: make(map[string]InitiatorFlowConfig), ResponderFlows: make(map[string]string), ConfidentialFlows: make(map[string]bool), ObserverFlows: make(map[string]string)}
 
 	for _, trigger := range app.Triggers {
 		flowType := trigger.Settings["flowType"]
@@ -212,8 +256,11 @@ func prepareData(opts *Options, app *app.Config) (data DataState, err error) {
 			if flowType.(string) == "initiator" {
 				for _, handler := range trigger.Handlers {
 					flowName := getFlowName(handler.Action.Data)
+					data.ConfidentialFlows[flowName] = handler.Settings["useAnonymousIdentity"].(bool)
+					config := InitiatorFlowConfig{Attrs: make([]model.ResourceAttribute, 0)}
+					config.HasObservers = handler.Settings["hasObservers"].(bool)
+					config.SendTxnToObserverManually = handler.Settings["observerManual"].(bool)
 
-					attrs := make([]model.ResourceAttribute, 0)
 					input := handler.Outputs["transactionInput"]
 					if input != nil {
 						metadata := input.(map[string]interface{})["metadata"].(string)
@@ -222,18 +269,21 @@ func prepareData(opts *Options, app *app.Config) (data DataState, err error) {
 								Description string `json: "description"`
 							}{}
 							json.Unmarshal([]byte(metadata), &desc)
-							data.InitiatorFlows[flowName] = model.ParseResourceModel(desc.Description).Attributes
-						} else {
-							data.InitiatorFlows[flowName] = attrs
+							config.Attrs = model.ParseResourceModel(desc.Description).Attributes
 						}
-					} else {
-						data.InitiatorFlows[flowName] = attrs
 					}
+					data.InitiatorFlows[flowName] = config
 				}
 			} else if flowType.(string) == "receiver" {
 				for _, handler := range trigger.Handlers {
 					flowName := getFlowName(handler.Action.Data)
 					data.ResponderFlows[flowName] = handler.Settings["initiatorFlow"].(string)
+					data.ConfidentialFlows[flowName] = handler.Settings["useAnonymousIdentity"].(bool)
+				}
+			} else if flowType.(string) == "observer" {
+				for _, handler := range trigger.Handlers {
+					flowName := getFlowName(handler.Action.Data)
+					data.ObserverFlows[flowName] = handler.Settings["initiatorFlow"].(string)
 				}
 			}
 		}

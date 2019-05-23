@@ -211,7 +211,7 @@ func TestParser(t *testing.T) {
 	*/
 	wdir, _ := filepath.Abs("/Users/mwenyan@tibco.com/Downloads/tmp")
 
-	opts := NewOptions("/Users/mwenyan@tibco.com/dovetail/src/github.com/TIBCOSoftware/dovetail-cli/corda/cordapp/iou.json", "1.0.0", wdir, "com.example.flows.iou")
+	opts := NewOptions("/Users/mwenyan@tibco.com/dovetail/src/github.com/TIBCOSoftware/dovetail-cli/corda/cordapp/iou.1.json", "2.0.0", wdir, "com.example.flows.iou", "")
 	generator := NewGenerator(opts)
 
 	//config, err := model.DecodeApp(bytes.NewReader([]byte(jsonstring)))

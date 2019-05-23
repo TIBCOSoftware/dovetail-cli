@@ -4,40 +4,65 @@ import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.flows.*
 import net.corda.core.utilities.ProgressTracker
 import com.tibco.dovetail.container.cordapp.AppFlow
-import com.tibco.dovetail.container.cordapp.DefaultSignTransactionFlow
+import com.tibco.dovetail.container.cordapp.ProgressTrackerSteps
+import com.tibco.dovetail.container.cordapp.flows.DefaultSignTransactionFlow
 import net.corda.core.contracts.Amount
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import java.util.*
 {{$app := .App}}
-{{$initiators := .InitiatorFlows }}
-{{range $responder, $initiator := .ResponderFlows}}
-{{$attrs := index $initiators $initiator}}
-@InitiatingFlow
+{{$ConfidentialFlows := .ConfidentialFlows}}
+{{range $initiator, $config := .InitiatorFlows }}
+{{$isConfidential := index $ConfidentialFlows $initiator}}
 @StartableByRPC
-class {{$initiator}}({{range $i, $attr := $attrs}}{{if ne $i 0}}{{","}}{{end}}val {{$attr.Name}}: {{ $attr.Type}} {{end}}): AppFlow(true) {
+class {{$initiator}}Impl({{range $i, $attr := $config.Attrs}}{{if ne $i 0}}{{","}}{{end}}val {{$attr.Name}}: {{ $attr.Type}} {{end}}): {{$initiator}}() {
 
-    override val progressTracker = ProgressTracker()
+    override val progressTracker = AppFlow.getInitiatorProgressTracker({{$isConfidential}}, {{$config.HasObservers}})
 
     @Suspendable
     override fun call() : SignedTransaction {
         var args = LinkedHashMap<String, Any>()
-        {{range $i, $attr := $attrs}}
+        var participants = ArrayList<String>()
+        {{range $i, $attr := $config.Attrs}}
         args.put("{{$attr.Name}}", {{$attr.Name}})
+        {{if eq $attr.PartyType "Notary"}} addNotary({{$attr.Name}})
+        {{else if eq $attr.PartyType "Observer"}} addObserver({{$attr.Name}})
+        {{else if eq $attr.PartyType "Participant"}} participants.add("{{$attr.Name}}"){{end}} 
         {{end}}
-        runFlow("{{$initiator}}", {{$app}}.getTrigger("{{$initiator}}"), args)
-        return initiatorSignAndCommit()
-    }
-}
-
-@InitiatedBy({{$initiator}}::class)
-class {{$responder}}(val counterpartySession: FlowSession) : AppFlow(false) {
-
-    @Suspendable
-    override fun call(): SignedTransaction {
-        this.runFlow("{{$responder}}", {{$app}}.getTrigger("{{$responder}}"), null)
-        val verifyFlow = DefaultSignTransactionFlow(counterpartySession)
-        return receiverSignAndCommit(verifyFlow, counterpartySession)
+        setOurIdentity()
+        {{if eq $isConfidential true}}swapIdentitiesInitiator(args, participants, progressTracker){{end}}
+        {{if eq $config.HasObservers true}} setObserverConfig({{$config.SendTxnToObserverManually}}){{end}}
+        runFlow("{{$initiator}}", {{$app}}Impl.getTrigger("{{$initiator}}"), args)
+        return initiatorSignAndCommit(progressTracker)
     }
 }
 {{end}}
+{{range $responder, $initiator := .ResponderFlows}}
+{{$isConfidential := index $ConfidentialFlows $responder}}
+@InitiatedBy({{$initiator}}::class)
+class {{$responder}}Impl(val counterpartySession: FlowSession) : AppFlow(false,{{$isConfidential}}) {
+    override val progressTracker = AppFlow.getResponderProgressTracker({{$isConfidential}})
+
+    @Suspendable
+    override fun call(): SignedTransaction {
+        {{if eq $isConfidential true}}
+        swapIdentitiesReceiver(counterpartySession, progressTracker)
+        {{end}}
+        this.runFlow("{{$responder}}", {{$app}}Impl.getTrigger("{{$responder}}"), null)
+        val verifyFlow = DefaultSignTransactionFlow(counterpartySession)
+        return receiverSignAndCommit(verifyFlow, counterpartySession, progressTracker)
+    }
+}
+{{end}}
+{{range $observer, $initiator := .ObserverFlows}}
+@InitiatedBy({{$initiator}}::class)
+class {{$observer}}Impl(val counterpartySession: FlowSession) : AppFlow(false,true) {
+    override val progressTracker = AppFlow.getObserverProgressTracker()
+
+    @Suspendable
+    override fun call(): SignedTransaction {
+        progressTracker.currentStep = ProgressTrackerSteps.RUN_APP_FLOW;
+        this.runFlow("{{$observer}}", {{$app}}Impl.getTrigger("{{$observer}}"), null)
+        return observerRecordTxn(counterpartySession, progressTracker)
+    }
+}{{end}}

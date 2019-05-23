@@ -37,6 +37,7 @@ type ResourceAttribute struct {
 	IsRef      bool   `json:"isRef, omitempty"`
 	IsArray    bool   `json:"isArray, omitempty"`
 	IsOptional bool   `json:"isOptional, omitempty"`
+	PartyType  string `json:"partyType, omitempty`
 }
 
 func ParseResourceModel(jsonResource string) *ResourceMetadataModel {

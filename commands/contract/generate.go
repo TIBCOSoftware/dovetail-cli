@@ -159,8 +159,8 @@ func validateModelFile(modelfile string) error {
 		return errors.Wrapf(err, "Failed to parse model file %s", modelfile)
 	}
 
-	if len(appConfig.Triggers) == 0 || len(appConfig.Triggers) > 1 {
-		return fmt.Errorf("There must be one and only one trigger defined in smart contract application")
+	if len(appConfig.Triggers) == 0 {
+		return fmt.Errorf("There must be at least one trigger defined in smart contract application")
 	}
 
 	return nil

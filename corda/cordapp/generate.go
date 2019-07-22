@@ -44,13 +44,20 @@ type InitiatorFlowConfig struct {
 	SendTxnToObserverManually bool
 }
 type DataState struct {
-	NS             string
-	App            string
-	InitiatorFlows map[string]InitiatorFlowConfig
-	ResponderFlows map[string]string
-	ObserverFlows  map[string]string
-	//InitiatorFlowAnonymousParties map[string][]model.ResourceAttribute
+	NS                string
+	App               string
+	InitiatorFlows    map[string]InitiatorFlowConfig
+	ResponderFlows    map[string]string
+	ObserverFlows     map[string]string
+	SchedulableFlows  map[string]SchedulableFlowConfig
 	ConfidentialFlows map[string]bool
+}
+
+type SchedulableFlowConfig struct {
+	NS               string
+	App              string
+	FlowName         string
+	InitiatingFlowNS string
 }
 
 var models map[string]*model.ResourceMetadataModel
@@ -116,7 +123,18 @@ func (g *Generator) GenerateApp(app *app.Config) error {
 		if err != nil {
 			return fmt.Errorf("createFlowKotlinFile flow.template err %v", err)
 		}
+
+		//schedulable flow file
+		if len(data.SchedulableFlows) > 0 {
+			for _, s := range data.SchedulableFlows {
+				err = createKotlinFile(kotlindir, s.NS, s, "schedulable.template", fmt.Sprintf("%s.kt", s.FlowName))
+				if err != nil {
+					return fmt.Errorf("createFlowKotlinFile schedulable.template err %v", err)
+				}
+			}
+		}
 	}
+
 	//create Resource
 	err = createResourceFiles(resourcedir, g.Opts, models)
 	if err != nil {
@@ -248,14 +266,14 @@ func createKotlinFile(dir, ns string, data interface{}, templateFile string, fil
 
 func prepareData(opts *Options, app *app.Config) (data DataState, err error) {
 	logger.Println("Prepare data ....")
-	data = DataState{NS: opts.Namespace, App: app.Name, InitiatorFlows: make(map[string]InitiatorFlowConfig), ResponderFlows: make(map[string]string), ConfidentialFlows: make(map[string]bool), ObserverFlows: make(map[string]string)}
+	data = DataState{NS: opts.Namespace, App: app.Name, InitiatorFlows: make(map[string]InitiatorFlowConfig), ResponderFlows: make(map[string]string), SchedulableFlows: make(map[string]SchedulableFlowConfig), ConfidentialFlows: make(map[string]bool), ObserverFlows: make(map[string]string)}
 
 	for _, trigger := range app.Triggers {
 		flowType := trigger.Settings["flowType"]
 		if flowType != nil {
 			if flowType.(string) == "initiator" {
 				for _, handler := range trigger.Handlers {
-					flowName := getFlowName(handler.Action.Data)
+					flowName := model.GetFlowName(handler.Action.Data)
 					data.ConfidentialFlows[flowName] = handler.Settings["useAnonymousIdentity"].(bool)
 					config := InitiatorFlowConfig{Attrs: make([]model.ResourceAttribute, 0)}
 					config.HasObservers = handler.Settings["hasObservers"].(bool)
@@ -276,25 +294,24 @@ func prepareData(opts *Options, app *app.Config) (data DataState, err error) {
 				}
 			} else if flowType.(string) == "receiver" {
 				for _, handler := range trigger.Handlers {
-					flowName := getFlowName(handler.Action.Data)
+					flowName := model.GetFlowName(handler.Action.Data)
 					data.ResponderFlows[flowName] = handler.Settings["initiatorFlow"].(string)
 					data.ConfidentialFlows[flowName] = handler.Settings["useAnonymousIdentity"].(bool)
 				}
 			} else if flowType.(string) == "observer" {
 				for _, handler := range trigger.Handlers {
-					flowName := getFlowName(handler.Action.Data)
+					flowName := model.GetFlowName(handler.Action.Data)
 					data.ObserverFlows[flowName] = handler.Settings["initiatorFlow"].(string)
+				}
+			} else if flowType.(string) == "schedulable" {
+				for _, handler := range trigger.Handlers {
+					flowName := model.GetFlowName(handler.Action.Data)
+					asset := handler.Settings["asset"].(string)
+					ns := asset[:strings.LastIndex(asset, ".")]
+					data.SchedulableFlows[flowName] = SchedulableFlowConfig{NS: ns, App: app.Name, FlowName: flowName, InitiatingFlowNS: opts.Namespace}
 				}
 			}
 		}
 	}
 	return data, nil
-}
-func getFlowName(data json.RawMessage) string {
-	flowuri := struct {
-		FlowURI string `json: "flowURI"`
-	}{}
-	json.Unmarshal([]byte(data), &flowuri)
-
-	return flowuri.FlowURI[11:]
 }

@@ -34,7 +34,7 @@ var (
 func init() {
 	DAppCmd.AddCommand(generateCmd)
 	generateCmd.PersistentFlags().StringP("target", "t", ".", "Destination path for generated artifacts, if a filename is given (With extension) the generated artifacts will compressed as a zip file with the file name provided")
-	generateCmd.Flags().StringP("namespace", "", "", "Corda only, required, composer model namespace")
+	generateCmd.Flags().StringP("namespace", "", "", "Corda only, required")
 	generateCmd.Flags().StringVarP(&modelfile, "model-file", "m", "", "DApp flow model file")
 	generateCmd.Flags().StringVarP(&pom, "dependency-file", "", "", "dependency xml file")
 	generateCmd.Flags().BoolVarP(&apiOnly, "api", "", false, "Corda only, generate API artifacts only")

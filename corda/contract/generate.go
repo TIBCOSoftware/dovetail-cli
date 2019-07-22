@@ -41,13 +41,15 @@ type Options struct {
 }
 
 type DataState struct {
-	NS            string
-	Class         string
-	ContractClass string
-	CordaClass    string
-	Attributes    []model.ResourceAttribute
-	Parent        string
-	Participants  []string
+	NS                string
+	Class             string
+	ContractClass     string
+	CordaClass        string
+	Attributes        []model.ResourceAttribute
+	Parent            string
+	Participants      []string
+	IsSchedulable     bool
+	ScheduledActivity string
 }
 
 type ContractData struct {
@@ -105,18 +107,23 @@ func (g *Generator) Generate() error {
 	kotlindir := wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "src/main/kotlin")
 	wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "target/kotlin/classes")
 
+	//create ContractImpl (flows)
+	err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "kotlin.contractimpl.template", fmt.Sprintf("%s%s", data.ContractClass, "Impl.kt"))
+	if err != nil {
+		return fmt.Errorf("createContractImplFile kotlin.contractimpl.template err %v", err)
+	}
 	//create ContractState
 	for _, s := range data.States {
 		err = createKotlinFile(kotlindir, g.Opts.Namespace, s, "kotlin.state.template", fmt.Sprintf("%s%s", s.Class, ".kt"))
 		if err != nil {
-			return fmt.Errorf("createContractStateKotlinFile kotlin.state.template err %v", err)
+			return fmt.Errorf("createContractStateFile kotlin.state.template err %v", err)
 		}
 	}
 
 	//create Contract
-	err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "kotlin.contract.template", fmt.Sprintf("%s%s", data.ContractClass, "Contract.kt"))
+	err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "kotlin.contract.template", fmt.Sprintf("%s%s", data.ContractClass, ".kt"))
 	if err != nil {
-		return fmt.Errorf("createContractJavaFile kotlin.contract.template err %v", err)
+		return fmt.Errorf("createContractFile kotlin.contract.template err %v", err)
 	}
 
 	//create Resource
@@ -271,6 +278,10 @@ func prepareContractStateData(opts *Options, flow *model.ModelResources, models 
 		}
 		state.ContractClass = fmt.Sprintf("%s.%s%s", opts.Namespace, flow.AppName, "Contract")
 		if process {
+			if schedulable, ok := flow.Schedulables[opts.State]; ok {
+				state.IsSchedulable = true
+				state.ScheduledActivity = schedulable
+			}
 			states = append(states, state)
 		}
 	} else {
@@ -283,6 +294,10 @@ func prepareContractStateData(opts *Options, flow *model.ModelResources, models 
 				}
 				state.ContractClass = fmt.Sprintf("%s.%s%s", opts.Namespace, flow.AppName, "Contract")
 				if process {
+					if schedulable, ok := flow.Schedulables[asset]; ok {
+						state.IsSchedulable = true
+						state.ScheduledActivity = schedulable
+					}
 					states = append(states, state)
 				}
 			}
@@ -568,7 +583,7 @@ func GetKotlinTypeNoArray(attr model.ResourceAttribute) string {
 			datatype = "java.math.BigDecimal"
 			break
 		case "DateTime":
-			datatype = "String"
+			datatype = "java.time.Instant"
 			break
 		case "com.tibco.dovetail.system.Party":
 			datatype = "AbstractParty"

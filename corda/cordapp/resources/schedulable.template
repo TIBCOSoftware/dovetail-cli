@@ -1,0 +1,57 @@
+package {{.NS}}
+
+import co.paralleluniverse.fibers.Suspendable
+import net.corda.core.flows.*
+import com.tibco.dovetail.container.cordapp.AppFlow
+import net.corda.core.contracts.StateRef
+import com.tibco.dovetail.core.runtime.flow.ReplyData
+import net.corda.core.transactions.SignedTransaction
+import kotlin.collections.LinkedHashMap
+import kotlin.reflect.full.primaryConstructor
+
+{{$app := .App}}
+@SchedulableFlow
+class {{.FlowName}}Impl(val ref: StateRef): AppFlow(false, false) {
+
+    @Suspendable
+    override fun call() : SignedTransaction? {
+        logger.info("{{.FlowName}} is triggered by a schedulable event")
+        try{
+            setOurIdentity()
+
+            val flowobj = createSubflowObject(ref)
+            if(flowobj != null){
+                return subFlow(flowobj)
+            } else {
+                logger.info("nothing to invoke")
+                return null
+            }
+        }catch(Exception e) {
+            throw new FlowException(e)
+        }
+    }
+
+    private fun createSubflowObject(ref: StateRef) : AppFlow? {
+        var args = LinkedHashMap<String, Any>()
+        args.put("transactionInput", serviceHub.loadState(ref).data)
+        val trigger = {{.InitiatingFlowNS}}.{{$app}}Impl.getTrigger("{{.FlowName}}")
+        val reply = runFlow("{{.FlowName}}", trigger, args)
+        if(reply != null && reply.getObjectData() != null){
+            val replydata = reply.getObjectData() as LinkedHashMap<String, Any>
+            val flowclass = "{{.InitiatingFlowNS}}." + replydata.get("FlowName") + "Impl"
+            val flowargs = replydata.get("Arguments") as LinkedHashMap<String, Any>
+
+            logger.info("{{.FlowName}} to invoke flow " + flowclass)
+            val kclass = Class.forName(flowclass).kotlin
+            val ctor = kclass.primaryConstructor
+            val arguments = ctor!!.parameters.map {
+                flowargs.get(it.name)
+            }.toTypedArray()
+
+            val flowobj = ctor.call(*arguments)
+            return flowobj as AppFlow
+        } else {
+            return null
+        }
+    }
+}

@@ -8,12 +8,13 @@ import java.io.InputStream
 import net.corda.core.serialization.CordaSerializable
 import java.util.Currency
 import net.corda.core.identity.AbstractParty
+import com.tibco.dovetail.core.runtime.trigger.ITrigger
 
 @CordaSerializable
 public class {{.ContractClass}} : CordaFlowContract(), Contract {
     companion object {
         @JvmStatic
-        val {{$.ContractClass}}_CONTRACT_ID = "{{$.NS}}.{{$.ContractClass}}Contract"
+        val {{$.ContractClass}}_CONTRACT_ID = "{{$.NS}}.{{$.ContractClass}}"
     } 
     {{range $txn := .Commands }}
     @CordaSerializable
@@ -35,5 +36,9 @@ public class {{.ContractClass}} : CordaFlowContract(), Contract {
 
     override fun verify(tx: LedgerTransaction) {
         verifyTransaction(tx)
+    }
+
+     override fun getTrigger(name: String):ITrigger? {
+        return {{.ContractClass}}Impl.getTrigger(name)
     }
 }

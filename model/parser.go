@@ -3,10 +3,12 @@ package model
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 
 	"github.com/TIBCOSoftware/flogo-lib/app"
+	"github.com/TIBCOSoftware/flogo-lib/core/trigger"
 )
 
 type ModelResources struct {
@@ -14,6 +16,7 @@ type ModelResources struct {
 	Assets       []string
 	Transactions []string
 	Schemas      map[string]string
+	Schedulables map[string]string
 }
 
 type ResourceMetadataModel struct {
@@ -56,14 +59,33 @@ func ParseFlowApp(jsonFile string) (*ModelResources, error) {
 	model := ModelResources{}
 	model.AppName = appCfg.Name
 	model.Schemas = make(map[string]string)
-	json.Unmarshal([]byte(appCfg.Triggers[0].GetSetting("assets")), &model.Assets)
-	json.Unmarshal([]byte(appCfg.Triggers[0].GetSetting("transactions")), &model.Transactions)
+	model.Schedulables = make(map[string]string)
+
+	triggerByname := make(map[string]*trigger.Config)
+	for _, t := range appCfg.Triggers {
+		triggerByname[t.Id] = t
+	}
+
+	txnTrigger := triggerByname["SmartContractTXNTrigger"]
+	json.Unmarshal([]byte(txnTrigger.Settings["assets"].(string)), &model.Assets)
+	json.Unmarshal([]byte(txnTrigger.Settings["transactions"].(string)), &model.Transactions)
 
 	schemas := struct{ schemas [][]string }{}
-	json.Unmarshal([]byte(appCfg.Triggers[0].GetSetting("schemas")), &schemas.schemas)
+	json.Unmarshal([]byte(txnTrigger.Settings["schemas"].(string)), &schemas.schemas)
 
 	for _, value := range schemas.schemas {
 		model.Schemas[value[0]] = value[1]
+	}
+
+	schedulerTrigger, ok := triggerByname["CordaSmartContractEventScheduler"]
+	if ok {
+		for _, h := range schedulerTrigger.Handlers {
+			schedulableState, ok := h.Settings["asset"]
+			if !ok {
+				return nil, fmt.Errorf("Schedulable asset is not defined")
+			}
+			model.Schedulables[schedulableState.(string)] = GetFlowName(h.Action.Data)
+		}
 	}
 	return &model, nil
 }
@@ -90,4 +112,13 @@ func DecodeApp(r io.Reader) (*app.Config, error) {
 	}
 
 	return appCfg, nil
+}
+
+func GetFlowName(data json.RawMessage) string {
+	flowuri := struct {
+		FlowURI string `json: "flowURI"`
+	}{}
+	json.Unmarshal([]byte(data), &flowuri)
+
+	return flowuri.FlowURI[11:]
 }

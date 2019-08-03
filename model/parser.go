@@ -7,8 +7,8 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/TIBCOSoftware/flogo-lib/app"
-	"github.com/TIBCOSoftware/flogo-lib/core/trigger"
+	"github.com/project-flogo/core/app"
+	"github.com/project-flogo/core/trigger"
 )
 
 type ModelResources struct {
@@ -63,10 +63,10 @@ func ParseFlowApp(jsonFile string) (*ModelResources, error) {
 
 	triggerByname := make(map[string]*trigger.Config)
 	for _, t := range appCfg.Triggers {
-		triggerByname[t.Id] = t
+		triggerByname[t.Ref] = t
 	}
 
-	txnTrigger := triggerByname["SmartContractTXNTrigger"]
+	txnTrigger := triggerByname["#transaction"]
 	json.Unmarshal([]byte(txnTrigger.Settings["assets"].(string)), &model.Assets)
 	json.Unmarshal([]byte(txnTrigger.Settings["transactions"].(string)), &model.Transactions)
 
@@ -84,7 +84,7 @@ func ParseFlowApp(jsonFile string) (*ModelResources, error) {
 			if !ok {
 				return nil, fmt.Errorf("Schedulable asset is not defined")
 			}
-			model.Schedulables[schedulableState.(string)] = GetFlowName(h.Action.Data)
+			model.Schedulables[schedulableState.(string)] = GetFlowName(h.Actions[0].Settings["flowURI"].(string))
 		}
 	}
 	return &model, nil
@@ -114,11 +114,6 @@ func DecodeApp(r io.Reader) (*app.Config, error) {
 	return appCfg, nil
 }
 
-func GetFlowName(data json.RawMessage) string {
-	flowuri := struct {
-		FlowURI string `json: "flowURI"`
-	}{}
-	json.Unmarshal([]byte(data), &flowuri)
-
-	return flowuri.FlowURI[11:]
+func GetFlowName(flowuri string) string {
+	return flowuri[11:]
 }

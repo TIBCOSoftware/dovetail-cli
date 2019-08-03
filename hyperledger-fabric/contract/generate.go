@@ -26,8 +26,8 @@ import (
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
 	wgutil "github.com/TIBCOSoftware/dovetail-cli/util"
-	"github.com/TIBCOSoftware/flogo-contrib/action/flow/definition"
-	"github.com/TIBCOSoftware/flogo-lib/app"
+	"github.com/project-flogo/core/app"
+	"github.com/project-flogo/flow/definition"
 )
 
 var logger = log.New(os.Stdout, "", log.LstdFlags)

@@ -20,7 +20,7 @@ import (
 	"github.com/TIBCOSoftware/dovetail-cli/languages"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	wgutil "github.com/TIBCOSoftware/dovetail-cli/util"
-	"github.com/TIBCOSoftware/flogo-lib/app"
+	"github.com/project-flogo/core/app"
 )
 
 var logger = log.New(os.Stdout, "", log.LstdFlags)
@@ -273,15 +273,15 @@ func prepareData(opts *Options, app *app.Config) (data DataState, err error) {
 		if flowType != nil {
 			if flowType.(string) == "initiator" {
 				for _, handler := range trigger.Handlers {
-					flowName := model.GetFlowName(handler.Action.Data)
+					flowName := model.GetFlowName(handler.Actions[0].Settings["flowURI"].(string))
 					data.ConfidentialFlows[flowName] = handler.Settings["useAnonymousIdentity"].(bool)
 					config := InitiatorFlowConfig{Attrs: make([]model.ResourceAttribute, 0)}
 					config.HasObservers = handler.Settings["hasObservers"].(bool)
 					config.SendTxnToObserverManually = handler.Settings["observerManual"].(bool)
 
-					input := handler.Outputs["transactionInput"]
+					input := handler.Schemas.Output["transactionInput"]
 					if input != nil {
-						metadata := input.(map[string]interface{})["metadata"].(string)
+						metadata := input.(map[string]interface{})["value"].(string)
 						if metadata != "" {
 							desc := struct {
 								Description string `json: "description"`
@@ -294,18 +294,18 @@ func prepareData(opts *Options, app *app.Config) (data DataState, err error) {
 				}
 			} else if flowType.(string) == "receiver" {
 				for _, handler := range trigger.Handlers {
-					flowName := model.GetFlowName(handler.Action.Data)
+					flowName := model.GetFlowName(handler.Actions[0].Settings["flowURI"].(string))
 					data.ResponderFlows[flowName] = handler.Settings["initiatorFlow"].(string)
 					data.ConfidentialFlows[flowName] = handler.Settings["useAnonymousIdentity"].(bool)
 				}
 			} else if flowType.(string) == "observer" {
 				for _, handler := range trigger.Handlers {
-					flowName := model.GetFlowName(handler.Action.Data)
+					flowName := model.GetFlowName(handler.Actions[0].Settings["flowURI"].(string))
 					data.ObserverFlows[flowName] = handler.Settings["initiatorFlow"].(string)
 				}
 			} else if flowType.(string) == "schedulable" {
 				for _, handler := range trigger.Handlers {
-					flowName := model.GetFlowName(handler.Action.Data)
+					flowName := model.GetFlowName(handler.Actions[0].Settings["flowURI"].(string))
 					asset := handler.Settings["asset"].(string)
 					ns := asset[:strings.LastIndex(asset, ".")]
 					data.SchedulableFlows[flowName] = SchedulableFlowConfig{NS: ns, App: app.Name, FlowName: flowName, InitiatingFlowNS: opts.Namespace}

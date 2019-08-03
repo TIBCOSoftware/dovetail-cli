@@ -48,13 +48,13 @@ class {{.Class}}({{range $i, $attr := .Attributes}}{{if ne $i 0}}{{","}}{{end}}{
 
             val txnSvc = CordaTransactionService(null, command)
                              
-            val reply = trig.invoke(ctnr, txnSvc)
-            if(reply == null || reply.getObjectData() == null){
-                System.out.println("flow {{.ScheduledActivity}} doesn't have scheduled event, nothing scheduled")
-                return null
+            trig.invoke(ctnr, txnSvc)
+            List<Object> tasks = ctnr.getContainerAsyncTasks(CordaContainer.TASK_SCHEDULEDACTIVITY);
+            if(tasks == null || tasks.isEmpty()) {
+            		return null;
             } else {
-                System.out.println("flow {{.ScheduledActivity}} scheduled an event")
-                return reply.getObjectData() as? ScheduledActivity
+            		ScheduledActivity sa = (ScheduledActivity)tasks.get(0);
+                return sa;
             }
         }
 

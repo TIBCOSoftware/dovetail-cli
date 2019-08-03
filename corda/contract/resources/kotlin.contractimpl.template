@@ -1,12 +1,13 @@
 package {{.NS}}
 
 import com.tibco.dovetail.core.runtime.compilers.AppCompiler
+import com.tibco.dovetail.core.runtime.compilers.App
 import com.tibco.dovetail.core.runtime.trigger.ITrigger
 
 object {{.ContractClass}}Impl {
 
-    val contractTriggers = AppCompiler.compileApp({{.ContractClass}}Impl::class.java.getResourceAsStream("transactions.json"))
+    val app = AppCompiler.compileApp({{.ContractClass}}Impl::class.java.getResourceAsStream("transactions.json"))
     fun getTrigger(name: String): ITrigger? {
-        return contractTriggers!![name]
+        return app.getTriggers()!![name]
     }
 }

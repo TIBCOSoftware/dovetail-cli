@@ -2,7 +2,7 @@ SCRIPTS_PATH      := scripts
 TEST_SCRIPTS_PATH := test/scripts
 
 .PHONY: all
-all: install test_all
+all: install dovetail-tests
 
 .PHONY: depend
 depend: 
@@ -21,7 +21,7 @@ buildtype: install
 	@$(SCRIPTS_PATH)/buildtype.sh
 
 .PHONY: test_all
-all: dovetail-tests hyperledger-fabric-tests corda-tests
+test_all: dovetail-tests hyperledger-fabric-tests corda-tests
 
 .PHONY: dovetail-tests
 dovetail-tests:

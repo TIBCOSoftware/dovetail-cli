@@ -48,8 +48,8 @@ class {{$responder}}Impl(val counterpartySession: FlowSession) : AppFlow(false,{
         {{if eq $isConfidential true}}
         swapIdentitiesReceiver(counterpartySession, progressTracker)
         {{end}}
-        this.runFlow("{{$responder}}", {{$app}}Impl.getTrigger("{{$responder}}"), null)
-        val verifyFlow = DefaultSignTransactionFlow(counterpartySession)
+       // this.runFlow("{{$responder}}", {{$app}}Impl.getTrigger("{{$responder}}"), null)
+        val verifyFlow = DefaultSignTransactionFlow(counterpartySession, this,"{{$responder}}", {{$app}}Impl.getTrigger("{{$responder}}"))
         return receiverSignAndCommit(verifyFlow, counterpartySession, progressTracker)
     }
 }

@@ -111,6 +111,7 @@
                 <excludes>
                  <exclude>com/tibco/dovetail/container/cordapp/**/*</exclude>
                   <exclude>cordapp/**/*</exclude>
+                  <exclude>com/tibco/dovetail/corda/json/deserializer/**/*</exclude>
               </excludes>
               </filter>
              </filters>

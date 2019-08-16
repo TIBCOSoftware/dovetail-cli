@@ -1,0 +1,25 @@
+package {{.NS}}.client.webserver.controller
+
+import {{.NS}}.client.webserver.NodeRPCConnection
+
+import org.springframework.web.bind.annotation.*
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
+
+/**
+ * A CorDapp-agnostic controller that exposes standard endpoints.
+ */
+@RestController
+@RequestMapping("/") // The paths for GET and POST requests are relative to this base path.
+class SecurityController(val rpc: NodeRPCConnection) {
+
+    @PostMapping(value = "/login", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun login(@RequestParam username: String, @RequestParam password: String) : ResponseEntity<Map<String, String>> {
+        try{
+            val token = rpc.connect(username, password)
+            return ResponseEntity.ok(mapOf("token" to token))
+        }catch (ex: Exception) {
+            return return ResponseEntity.badRequest().body(mapOf("error" to ex.localizedMessage))
+        }
+    }
+}

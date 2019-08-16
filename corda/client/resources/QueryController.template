@@ -1,0 +1,163 @@
+package {{.NS}}.client.webserver.controller
+
+import {{.NS}}.client.webserver.NodeRPCConnection
+import net.corda.core.contracts.ContractState
+import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.UniqueIdentifier
+import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.CordaX500Name
+import net.corda.core.messaging.CordaRPCOps
+import net.corda.core.messaging.vaultQueryBy
+import net.corda.core.node.services.Vault
+import net.corda.core.node.services.vault.*
+import net.corda.core.utilities.OpaqueBytes
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.*
+import org.slf4j.LoggerFactory
+
+import org.springframework.http.MediaType
+import java.util.*
+
+/**
+ * A CorDapp-agnostic controller that exposes standard endpoints.
+ */
+@RestController
+@RequestMapping("/query") // The paths for GET and POST requests are relative to this base path.
+class QueryController(val rpc: NodeRPCConnection) {
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(RestController::class.java)
+    }
+
+    @GetMapping(value = "/states", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun allStates(@RequestParam stateClass: String? = null, @RequestHeader("Authorization") bearer: String) : Map<String, List<StateAndRef<ContractState>>>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        if(stateClass == null)
+            return mapOf("states" to cnx.vaultQueryBy<ContractState>().states)
+        else
+            return mapOf("states" to cnx.vaultQuery(Class.forName(stateClass) as Class<out ContractState>).states)
+    }
+
+    @PostMapping(value = "/linear", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun linearStateQuery(@RequestBody input: LinearStateQueryInput, @RequestHeader("Authorization") bearer: String): ResponseEntity<Map<String, Any>> {
+
+        return try {
+            val cnx = AccessControl.getRpcProxy(rpc, bearer)
+
+            var criteria = QueryCriteria.LinearStateQueryCriteria(linearId = input.ids)
+            if(input.uuids != null)
+                criteria = criteria.withUuid(input.uuids)
+
+            if(input.externalIds != null)
+                criteria = criteria.withExternalId(input.externalIds)
+
+            val vaultQuery = createVaultQueryCriteria(input, cnx)
+
+            var pageSpec =  PageSpecification()
+            if(input.pageSpec != null)
+                pageSpec = PageSpecification(input.pageSpec.pageNumber, input.pageSpec.pageSize)
+
+            val sorting = Sort(listOf(Sort.SortColumn(SortAttribute.Standard(Sort.LinearStateAttribute.EXTERNAL_ID), Sort.Direction.ASC)) as Collection<Sort.SortColumn>)
+
+            val result = cnx.vaultQueryBy(criteria.and(vaultQuery), pageSpec, sorting, Class.forName(input.linearStateClass) as Class<out ContractState>)
+            ResponseEntity.status(HttpStatus.OK).body(mapOf("results" to result.states))
+
+        } catch (ex: Throwable) {
+
+            ResponseEntity.badRequest().body(mapOf("error" to ex.message!!))
+        }
+    }
+
+    @PostMapping(value = "/fungible", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun fungibleAssetQuery(@RequestBody input: FungibleAssetQueryInput, @RequestHeader("Authorization") bearer: String): ResponseEntity<Map<String, Any>> {
+
+        return try {
+            val cnx = AccessControl.getRpcProxy(rpc, bearer)
+
+            var criteria = QueryCriteria.FungibleAssetQueryCriteria()
+            if (input.owners != null)
+                criteria = criteria.withOwner(input.owners.map { val p = CordaX500Name.parse(it);cnx.wellKnownPartyFromX500Name(p) as AbstractParty })
+
+            if (input.issuers != null)
+                criteria = criteria.withIssuer(input.issuers.map { val p = CordaX500Name.parse(it);cnx.wellKnownPartyFromX500Name(p) as AbstractParty })
+
+            if(input.issuerRefs != null)
+                criteria = criteria.withissuerRef(input.issuerRefs.map { OpaqueBytes(it.toByteArray()) })
+
+            if(input.quantityFilter != null)
+                criteria = criteria.withQuantity(FilterCriteriaBuilder.parseFilterForQuantity(input.quantityFilter))
+
+            val vaultQuery = createVaultQueryCriteria(input, cnx)
+
+            var pageSpec = PageSpecification()
+            if (input.pageSpec != null)
+                pageSpec = PageSpecification(input.pageSpec.pageNumber, input.pageSpec.pageSize)
+
+            val sorting = Sort(listOf(Sort.SortColumn(SortAttribute.Standard(Sort.LinearStateAttribute.EXTERNAL_ID), Sort.Direction.ASC)) as Collection<Sort.SortColumn>)
+
+            val result = cnx.vaultQueryBy(criteria.and(vaultQuery), pageSpec, sorting, Class.forName(input.fungibleStateClass) as Class<out ContractState>)
+
+            ResponseEntity.status(HttpStatus.OK).body(mapOf("results" to result.states))
+
+        } catch (ex: Throwable) {
+
+            ResponseEntity.badRequest().body(mapOf("error" to ex.message!!))
+        }
+    }
+
+    fun createVaultQueryCriteria(input: QueryInput, cnx: CordaRPCOps) : QueryCriteria {
+        var vaultQuery = QueryCriteria.VaultQueryCriteria()
+
+        if(input.participants != null)
+            vaultQuery = vaultQuery.withParticipants(input.participants.map { val p = CordaX500Name.parse(it);cnx.wellKnownPartyFromX500Name(p) as AbstractParty })
+
+
+        if(input.stateStatus != null)
+            vaultQuery = vaultQuery.withStatus(input.stateStatus)
+
+        if(input.relevantStatus != null)
+            vaultQuery = vaultQuery.withRelevancyStatus(input.relevantStatus)
+
+        if(input.notarizedby != null){
+            vaultQuery = vaultQuery.withNotary(input.notarizedby.map { val p = CordaX500Name.parse(it);cnx.wellKnownPartyFromX500Name(p) as AbstractParty })
+        }
+
+        if(input.recordedTimeFilter != null){
+            vaultQuery = vaultQuery.withTimeCondition(QueryCriteria.TimeCondition(
+                    QueryCriteria.TimeInstantType.RECORDED,
+                    FilterCriteriaBuilder.parseFilterForInstant(input.recordedTimeFilter)))
+        }
+
+        if(input.consumedTimeFilter != null){
+            var vaultQuery2 = QueryCriteria.VaultQueryCriteria()
+            vaultQuery2 = vaultQuery2.withTimeCondition(QueryCriteria.TimeCondition(
+                    QueryCriteria.TimeInstantType.CONSUMED,
+                    FilterCriteriaBuilder.parseFilterForInstant(input.consumedTimeFilter)))
+            return vaultQuery.and(vaultQuery2)
+        }
+
+        return vaultQuery;
+    }
+    data class LinearStateQueryInput(val linearStateClass: String,
+                                     val ids: List<UniqueIdentifier>? = null,
+                                     val uuids: List<UUID>? = null,
+                                     val externalIds: List<String>? = null):QueryInput()
+
+    data class FungibleAssetQueryInput(val fungibleStateClass: String,
+                                       val owners: List<String>? = null,
+                                       val issuers: List<String>? = null,
+                                       val issuerRefs: List<String>? = null,
+                                       val quantityFilter: String? = null): QueryInput()
+
+    open class QueryInput(val stateStatus: Vault.StateStatus? = null,
+                          val relevantStatus: Vault.RelevancyStatus? = null,
+                          val recordedTimeFilter: String? = null,
+                          val consumedTimeFilter: String? = null,
+                          val notarizedby: List<String>? = null,
+                          val participants: List<String>? = null,
+                          val pageSpec: PageSpec? = null)
+
+    data class SortField(val attribute: Sort.FungibleStateAttribute, val direction: Sort.Direction)
+    data class PageSpec(val pageNumber: Int = -1, val pageSize: Int = 200)
+}

@@ -1,0 +1,63 @@
+package {{.NS}}.client.webserver.controller
+
+import {{.NS}}.client.webserver.NodeRPCConnection
+import net.corda.core.contracts.Amount
+import net.corda.core.contracts.StateAndRef
+import net.corda.core.identity.CordaX500Name
+import net.corda.core.messaging.vaultQueryBy
+import net.corda.core.utilities.getOrThrow
+import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.*
+import java.util.*
+{{$input := .}}
+{{range $flow, $config := .InitiatorFlows }}
+import {{$input.NS}}.{{$flow}}Impl
+{{end}}
+/**
+ *  A Spring Boot Server API controller for interacting with the node via RPC.
+ */
+
+@RestController
+@RequestMapping("/api") 
+class MainController(val rpc: NodeRPCConnection) {
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(RestController::class.java)
+    }
+
+{{range $flow, $config := .InitiatorFlows }}
+    @PostMapping(value = "{{$flow | ToLower }}", produces = arrayOf("MediaType.APPLICATION_JSON_VALUE"))
+    fun {{$flow}}(@RequestBody input: {{$flow}}Input, @RequestHeader("Authorization") bearer: String): ResponseEntity<Map<String, String>> {
+        return try {
+            val cnx = AccessControl.getRpcProxy(rpc, bearer)
+            val args = ArrayList<Any>()
+            {{range $i, $attr := $config.Attrs}}
+            if(input.{{$attr.Name}} == null){
+                return ResponseEntity.badRequest().body(mapOf("error" to "'{{$attr.Name}}' must not be null"))
+            }
+            {{if eq $attr.Type "net.corda.core.identity.Party"}}
+            val {{$attr.Name}} = CordaX500Name.parse(input.{{$attr.Name}})
+            val {{$attr.Name}}Party = cnx.wellKnownPartyFromX500Name({{$attr.Name}}) ?: return ResponseEntity.badRequest().body(mapOf("error" to "Party named $input.{{$attr.Name}} cannot be found"))
+            args.add({{$attr.Name}}Party)
+            {{else if eq $attr.Type "net.corda.core.contracts.Amount<Currency>"}}
+            args.add(Amount<Currency>(input.{{$attr.Name}}.quantity, Currency.getInstance(input.{{$attr.Name}}.currency)))
+            {{else}}
+            args.add(input.{{$attr.Name}})
+            {{end}}{{end}}
+            val signedTx = cnx.startFlowDynamic({{$flow}}Impl::class.java, *args.toArray()).returnValue.getOrThrow()
+            ResponseEntity.status(HttpStatus.OK).body(mapOf("TransactionId" to "${signedTx!!.id}"))
+
+        } catch (ex: Throwable) {
+
+            logger.error(ex.message, ex)
+            ResponseEntity.badRequest().body(mapOf("error" to ex.message!!))
+        }
+    }
+
+    data class {{$flow}}Input({{range $i, $attr := $config.Attrs}}{{if ne $i 0}}{{","}}{{end}}val {{$attr.Name}}: {{if eq $attr.Type "net.corda.core.identity.Party"}}String {{else if eq $attr.Type "net.corda.core.contracts.Amount<Currency>"}}MoneyAmount {{else}}{{ $attr.Type}}{{end}} {{end}})
+{{end}}
+    data class MoneyAmount(val quantity: Long, val currency: String)
+}

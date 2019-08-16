@@ -13,7 +13,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"strconv"
 	"strings"
@@ -42,12 +41,15 @@ type Options struct {
 }
 
 type DataState struct {
-	NS           string
-	Class        string
-	CordaClass   string
-	Attributes   []model.ResourceAttribute
-	Parent       string
-	Participants []string
+	NS                string
+	Class             string
+	ContractClass     string
+	CordaClass        string
+	Attributes        []model.ResourceAttribute
+	Parent            string
+	Participants      []string
+	IsSchedulable     bool
+	ScheduledActivity string
 }
 
 type ContractData struct {
@@ -86,23 +88,12 @@ func (g *Generator) Generate() error {
 	}
 
 	models = parseAllResources(flow.Schemas)
-	data, concepts, err := prepareContractStateData(g.Opts, flow.Assets, flow.Transactions, models)
+	data, concepts, err := prepareContractStateData(g.Opts, flow, models)
 	if err != nil {
 		return fmt.Errorf("prepareContractStateData err %v", err)
 	}
 
-	//use the asset name as Contract name if there is only one asset
-	//otherwise use the application name
-	contractName := ""
-	if len(data.States) == 1 {
-		contractName = data.States[0].Class
-	} else {
-		contractName = flow.AppName
-	}
-	fmt.Printf("contractname = %s\n", contractName)
-	data.ContractClass = contractName
-
-	javaProject := languages.NewJava(g.Opts.TargetDir, contractName)
+	javaProject := languages.NewJava(g.Opts.TargetDir, flow.AppName)
 
 	err = javaProject.Init()
 	if err != nil {
@@ -116,18 +107,23 @@ func (g *Generator) Generate() error {
 	kotlindir := wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "src/main/kotlin")
 	wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "target/kotlin/classes")
 
+	//create ContractImpl (flows)
+	err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "kotlin.contractimpl.template", fmt.Sprintf("%s%s", data.ContractClass, "Impl.kt"))
+	if err != nil {
+		return fmt.Errorf("createContractImplFile kotlin.contractimpl.template err %v", err)
+	}
 	//create ContractState
 	for _, s := range data.States {
 		err = createKotlinFile(kotlindir, g.Opts.Namespace, s, "kotlin.state.template", fmt.Sprintf("%s%s", s.Class, ".kt"))
 		if err != nil {
-			return fmt.Errorf("createContractStateKotlinFile kotlin.state.template err %v", err)
+			return fmt.Errorf("createContractStateFile kotlin.state.template err %v", err)
 		}
 	}
 
 	//create Contract
-	err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "kotlin.contract.template", fmt.Sprintf("%s%s", contractName, "Contract.kt"))
+	err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "kotlin.contract.template", fmt.Sprintf("%s%s", data.ContractClass, ".kt"))
 	if err != nil {
-		return fmt.Errorf("createContractJavaFile kotlin.contract.template err %v", err)
+		return fmt.Errorf("createContractFile kotlin.contract.template err %v", err)
 	}
 
 	//create Resource
@@ -142,7 +138,7 @@ func (g *Generator) Generate() error {
 		return fmt.Errorf("createConceptJavaFiles kotlin.concept.template err %v", err)
 	}
 
-	err = compileAndJar(javaProject.GetAppDir(), g.Opts.Namespace, contractName, g.Opts.Version, "kotlin.pom.xml")
+	err = compileAndJar(javaProject.GetAppDir(), g.Opts.Namespace, flow.AppName, g.Opts.Version, "kotlin.pom.xml")
 	if err != nil {
 		return fmt.Errorf("compileAndJar kotlin.pom.xml err %v", err)
 	}
@@ -184,18 +180,23 @@ func compileAndJar(targetdir, ns, clazz, version string, pomf string) error {
 	if err != nil {
 		return err
 	}
-	err = copyContent(pom, path.Join(targetdir, pomf))
+	err = wgutil.CopyContent(pom, path.Join(targetdir, pomf))
 	if err != nil {
 		return err
 	}
-	args := []string{"package", "-f", path.Join(targetdir, pomf), "-DbaseDir=" + targetdir, "-Dversion=" + version, "-DgroupId=" + ns, "-DartifactId=" + clazz}
+	err = wgutil.MvnPackage(ns, clazz, version, pomf, targetdir)
+	/*args := []string{"install", "-f", path.Join(targetdir, pomf), "-DbaseDir=" + targetdir, "-Dversion=" + version, "-DgroupId=" + ns, "-DartifactId=" + clazz}
 	cmd := exec.Command("mvn", args...)
 	logger.Printf("mvn command %v\n", cmd.Args)
-	out, err := cmd.Output()
+	out, err := cmd.Output()*/
 	if err != nil {
-		return fmt.Errorf("compileAndJar err %v", string(out))
+		return err
 	}
 
+	err = wgutil.MvnInstall(ns, clazz, version, fmt.Sprintf("%s/kotlin-%s-%s.jar", targetdir, clazz, version))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 func createConceptKotlinFiles(dir, template string, concepts []DataState) error {
@@ -210,43 +211,15 @@ func createConceptKotlinFiles(dir, template string, concepts []DataState) error 
 
 func createResourceFiles(dir string, opts *Options, models map[string]*model.ResourceMetadataModel) error {
 	logger.Println("Copy resource file - transactions.json ...")
-	/*fm, err := os.Create(path.Join(dir, "schemas.json"))
 
-	if err != nil {
-		return err
-	}
-	defer fm.Close()
-
-	jsonmodel, err := json.Marshal(models)
-	if err != nil {
-		return fmt.Errorf("Error creating schema.json file, error %v", err)
-	}
-	fm.Write(jsonmodel)
-	*/
-	err := copyFile(opts.ModelFile, path.Join(dir, "transactions.json"))
+	err := wgutil.CopyFile(opts.ModelFile, path.Join(dir, "transactions.json"))
 	if err != nil {
 		return fmt.Errorf("Error creating transaction.json file, error %v", err)
 	}
 
 	return nil
 }
-func copyFile(src string, dest string) error {
-	content, err := ioutil.ReadFile(src)
-	if err != nil {
-		return err
-	}
 
-	return copyContent(content, dest)
-}
-func copyContent(content []byte, dest string) error {
-	ft, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer ft.Close()
-	ft.Write(content)
-	return nil
-}
 func createKotlinFile(dir, ns string, data interface{}, templateFile string, fileName string) error {
 	logger.Printf("Create kotlin file %s with template %s....", fileName, templateFile)
 
@@ -285,9 +258,14 @@ func createKotlinFile(dir, ns string, data interface{}, templateFile string, fil
 	writer.Flush()
 	return nil
 }
-func prepareContractStateData(opts *Options, assets, transactions []string, models map[string]*model.ResourceMetadataModel) (data ContractData, conceptdata []DataState, err error) {
+func prepareContractStateData(opts *Options, flow *model.ModelResources, models map[string]*model.ResourceMetadataModel) (data ContractData, conceptdata []DataState, err error) {
 	logger.Println("Prepare contract state data ....")
+	assets := flow.Assets
+	transactions := flow.Transactions
 	data = ContractData{NS: opts.Namespace, Flow: opts.ModelFile}
+
+	fmt.Printf("***** Contract name = %s.%s%s\n", opts.Namespace, flow.AppName, "Contract")
+	data.ContractClass = fmt.Sprintf("%s%s", flow.AppName, "Contract")
 	conceptdata = make([]DataState, 0)
 	states := make([]DataState, 0)
 	concepts := make(map[string]string)
@@ -298,7 +276,12 @@ func prepareContractStateData(opts *Options, assets, transactions []string, mode
 		if err != nil {
 			return data, conceptdata, err
 		}
+		state.ContractClass = fmt.Sprintf("%s.%s%s", opts.Namespace, flow.AppName, "Contract")
 		if process {
+			if schedulable, ok := flow.Schedulables[opts.State]; ok {
+				state.IsSchedulable = true
+				state.ScheduledActivity = schedulable
+			}
 			states = append(states, state)
 		}
 	} else {
@@ -309,7 +292,12 @@ func prepareContractStateData(opts *Options, assets, transactions []string, mode
 				if err != nil {
 					return data, conceptdata, err
 				}
+				state.ContractClass = fmt.Sprintf("%s.%s%s", opts.Namespace, flow.AppName, "Contract")
 				if process {
+					if schedulable, ok := flow.Schedulables[asset]; ok {
+						state.IsSchedulable = true
+						state.ScheduledActivity = schedulable
+					}
 					states = append(states, state)
 				}
 			}
@@ -595,13 +583,13 @@ func GetKotlinTypeNoArray(attr model.ResourceAttribute) string {
 			datatype = "java.math.BigDecimal"
 			break
 		case "DateTime":
-			datatype = "String"
+			datatype = "java.time.Instant"
 			break
 		case "com.tibco.dovetail.system.Party":
-			datatype = "net.corda.core.identity.Party"
+			datatype = "AbstractParty"
 			break
 		case "org.hyperledger.composer.system.Participant":
-			datatype = "net.corda.core.identity.Party"
+			datatype = "AbstractParty"
 			break
 		case "com.tibco.dovetail.system.Cash":
 			datatype = "net.corda.finance.contracts.asset.Cash.State"
@@ -672,9 +660,9 @@ func GetParticipants(state DataState) string {
 
 func toParticipant(varname string, attr model.ResourceAttribute) string {
 	datatype := GetKotlinType(attr)
-	if strings.Compare(datatype, "net.corda.core.identity.Party") == 0 {
+	if strings.Compare(datatype, "AbstractParty") == 0 {
 		return "	participants.add(" + varname + ")"
-	} else if strings.Compare(datatype, "List<net.corda.core.identity.Party>") == 0 {
+	} else if strings.Compare(datatype, "List<AbstractParty>") == 0 {
 		return "	participants.addAll(" + varname + ")"
 	} else {
 		panic(fmt.Sprintf("attribute %s's data type is %s, must be type of participant", varname, datatype))

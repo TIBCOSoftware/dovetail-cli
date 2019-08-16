@@ -1,0 +1,1 @@
+go-bindata -pkg client -o resources.go resources/

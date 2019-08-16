@@ -1,0 +1,19 @@
+package {{.NS}}
+
+import co.paralleluniverse.fibers.Suspendable
+import net.corda.core.flows.*
+import net.corda.core.utilities.ProgressTracker
+import com.tibco.dovetail.container.cordapp.AppFlow
+import com.tibco.dovetail.container.cordapp.flows.DefaultSignTransactionFlow
+import net.corda.core.contracts.Amount
+import net.corda.core.identity.Party
+import net.corda.core.transactions.SignedTransaction
+import java.util.*
+{{$app := .App}}
+{{$ConfidentialFlows := .ConfidentialFlows}}
+{{range $initiator, $config := .InitiatorFlows }}
+{{$isConfidential := index $ConfidentialFlows $initiator}}
+@InitiatingFlow
+abstract class {{$initiator}}(): AppFlow(true,{{$isConfidential}}) {
+}
+{{end}}

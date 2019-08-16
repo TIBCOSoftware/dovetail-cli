@@ -3,10 +3,12 @@ package model
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 
-	"github.com/TIBCOSoftware/flogo-lib/app"
+	"github.com/project-flogo/core/app"
+	"github.com/project-flogo/core/trigger"
 )
 
 type ModelResources struct {
@@ -14,14 +16,15 @@ type ModelResources struct {
 	Assets       []string
 	Transactions []string
 	Schemas      map[string]string
+	Schedulables map[string]string
 }
 
 type ResourceMetadataModel struct {
 	Metadata struct {
 		Type         string `json:"type"`
-		Parent       string `json:"parent"`
-		CordaClass   string `json:"cordaClass"`
-		IdentifiedBy string `json:"identifiedBy"`
+		Parent       string `json:"parent, omitempty"`
+		CordaClass   string `json:"cordaClass, omitempty"`
+		IdentifiedBy string `json:"identifiedBy, omitempty"`
 		IsAbstract   bool   `json:"isAbstract, omitempty"`
 		Decorators   []struct {
 			Name string   `json:"name"`
@@ -34,9 +37,10 @@ type ResourceMetadataModel struct {
 type ResourceAttribute struct {
 	Name       string `json:"name"`
 	Type       string `json:"type"`
-	IsRef      bool   `json:"isRef"`
-	IsArray    bool   `json:"isArray"`
-	IsOptional bool   `json:"isOptional"`
+	IsRef      bool   `json:"isRef, omitempty"`
+	IsArray    bool   `json:"isArray, omitempty"`
+	IsOptional bool   `json:"isOptional, omitempty"`
+	PartyType  string `json:"partyType, omitempty`
 }
 
 func ParseResourceModel(jsonResource string) *ResourceMetadataModel {
@@ -55,14 +59,33 @@ func ParseFlowApp(jsonFile string) (*ModelResources, error) {
 	model := ModelResources{}
 	model.AppName = appCfg.Name
 	model.Schemas = make(map[string]string)
-	json.Unmarshal([]byte(appCfg.Triggers[0].GetSetting("assets")), &model.Assets)
-	json.Unmarshal([]byte(appCfg.Triggers[0].GetSetting("transactions")), &model.Transactions)
+	model.Schedulables = make(map[string]string)
+
+	triggerByname := make(map[string]*trigger.Config)
+	for _, t := range appCfg.Triggers {
+		triggerByname[t.Ref] = t
+	}
+
+	txnTrigger := triggerByname["#transaction"]
+	json.Unmarshal([]byte(txnTrigger.Settings["assets"].(string)), &model.Assets)
+	json.Unmarshal([]byte(txnTrigger.Settings["transactions"].(string)), &model.Transactions)
 
 	schemas := struct{ schemas [][]string }{}
-	json.Unmarshal([]byte(appCfg.Triggers[0].GetSetting("schemas")), &schemas.schemas)
+	json.Unmarshal([]byte(txnTrigger.Settings["schemas"].(string)), &schemas.schemas)
 
 	for _, value := range schemas.schemas {
 		model.Schemas[value[0]] = value[1]
+	}
+
+	schedulerTrigger, ok := triggerByname["CordaSmartContractEventScheduler"]
+	if ok {
+		for _, h := range schedulerTrigger.Handlers {
+			schedulableState, ok := h.Settings["asset"]
+			if !ok {
+				return nil, fmt.Errorf("Schedulable asset is not defined")
+			}
+			model.Schedulables[schedulableState.(string)] = GetFlowName(h.Actions[0].Settings["flowURI"].(string))
+		}
 	}
 	return &model, nil
 }
@@ -75,11 +98,11 @@ func ParseApp(modelfile string) (*app.Config, error) {
 		return nil, err
 	}
 
-	return decodeApp(bytes.NewReader(flowjson))
+	return DecodeApp(bytes.NewReader(flowjson))
 }
 
 // decodeApp decodes the model file into an app.Config struct
-func decodeApp(r io.Reader) (*app.Config, error) {
+func DecodeApp(r io.Reader) (*app.Config, error) {
 	appCfg := &app.Config{}
 
 	jsonParser := json.NewDecoder(r)
@@ -89,4 +112,8 @@ func decodeApp(r io.Reader) (*app.Config, error) {
 	}
 
 	return appCfg, nil
+}
+
+func GetFlowName(flowuri string) string {
+	return flowuri[11:]
 }

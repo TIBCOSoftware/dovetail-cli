@@ -1,0 +1,58 @@
+package {{.NS}}
+
+import co.paralleluniverse.fibers.Suspendable
+import net.corda.core.flows.*
+import com.tibco.dovetail.container.cordapp.AppFlow
+import com.tibco.dovetail.container.cordapp.AppContainer
+import net.corda.core.contracts.StateRef
+import net.corda.core.transactions.SignedTransaction
+import kotlin.collections.LinkedHashMap
+import kotlin.reflect.full.primaryConstructor
+
+{{$app := .App}}
+@SchedulableFlow
+class {{.FlowName}}Impl(val ref: StateRef): AppFlow(false, false) {
+
+    @Suspendable
+    override fun call() : SignedTransaction? {
+        logger.info("{{.FlowName}} is triggered by a schedulable event")
+        try{
+            setOurIdentity()
+
+            val flowobj = createSubflowObject(ref)
+            if(flowobj != null){
+                return subFlow(flowobj)
+            } else {
+                logger.info("nothing to invoke")
+                return null
+            }
+        }catch(Exception e) {
+            throw new FlowException(e)
+        }
+    }
+
+    private fun createSubflowObject(ref: StateRef) : AppFlow? {
+        var args = LinkedHashMap<String, Any>()
+        args.put("transactionInput", serviceHub.loadState(ref).data)
+        val trigger = {{.InitiatingFlowNS}}.{{$app}}Impl.getTrigger("{{.FlowName}}")
+        val ctnr = runFlow("{{.FlowName}}", trigger, args)
+        val tasks = ctnr.getContainerAsyncTasks(AppContainer.TASK_SUBFLOW)
+        if(tasks == null || tasks.isEmpty()){
+            return null
+        } else {
+            val subflow = tasks.get(0) as LinkedHashMap<String, Any>
+            val flowclass = "{{.InitiatingFlowNS}}." + subflow.get("FlowName") + "Impl"
+            val flowargs = subflow.get("Arguments") as LinkedHashMap<String, Any>
+
+            logger.info("{{.FlowName}} to invoke flow " + flowclass)
+            val kclass = Class.forName(flowclass).kotlin
+            val ctor = kclass.primaryConstructor
+            val arguments = ctor!!.parameters.map {
+                flowargs.get(it.name)
+            }.toTypedArray()
+
+            val flowobj = ctor.call(*arguments)
+            return flowobj as AppFlow
+        } 
+    }
+}

@@ -1,0 +1,266 @@
+package {{.NS}}.client.webserver.controller
+
+import {{.NS}}.client.webserver.NodeRPCConnection
+import net.corda.core.contracts.ContractState
+import net.corda.core.contracts.StateAndRef
+import net.corda.core.identity.CordaX500Name
+import net.corda.core.identity.Party
+import net.corda.core.messaging.vaultQueryBy
+import net.corda.core.utilities.NetworkHostAndPort
+import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
+import java.time.ZoneId
+import org.springframework.http.MediaType
+import org.springframework.web.bind.annotation.*
+import java.util.Currency
+import net.corda.core.contracts.Amount
+import net.corda.finance.workflows.getCashBalance
+import net.corda.finance.workflows.getCashBalances
+import net.corda.finance.flows.*
+import net.corda.core.messaging.startTrackedFlow
+import net.corda.core.utilities.getOrThrow
+import net.corda.core.utilities.OpaqueBytes
+import org.springframework.http.ResponseEntity
+import org.springframework.http.HttpStatus
+
+val SERVICE_NAMES = listOf("Notary", "Network Map Service")
+
+/**
+ * A CorDapp-agnostic controller that exposes standard endpoints.
+ */
+@RestController
+@RequestMapping("/") // The paths for GET and POST requests are relative to this base path.
+class StandardController(val rpc: NodeRPCConnection) {
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(RestController::class.java)
+    }
+
+    private val proxy = rpc.proxy
+    private val myLegalName = rpc.proxy.nodeInfo().legalIdentities.first().name
+
+    @GetMapping(value = "/status", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun status() = mapOf("status" to "200")
+
+    @PostMapping(value = "/login", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun login(@RequestParam username: String, @RequestParam password: String) : Map<String, String>{
+        val token = rpc.connect(username, password)
+        return mapOf("token" to token)
+    }
+
+    @GetMapping(value = "/servertime", produces =  arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun serverTime(@RequestHeader("Authorization") bearer: String) : Map<String, String>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("servertime" to LocalDateTime.ofInstant(proxy.currentNodeTime(), ZoneId.of("UTC")).toString())
+    }
+
+    @GetMapping(value = "/addresses", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun addresses(@RequestHeader("Authorization") bearer: String): Map<String, List<NetworkHostAndPort>> {
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+
+        return mapOf("addresses" to cnx.nodeInfo().addresses)
+    }
+
+    @GetMapping(value = "/identities", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun identities(@RequestHeader("Authorization") bearer: String) :Map<String, List<Party>> {
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("identities" to cnx.nodeInfo().legalIdentities)
+    }
+
+    @GetMapping(value = "/platformversion", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun platformVersion(@RequestHeader("Authorization") bearer: String) : Map<String, String>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("platformveresion" to cnx.nodeInfo().platformVersion.toString())
+    }
+
+    /**
+     * Returns all parties registered with the network map service. These names can be used to look up identities using
+     * the identity service.
+     */
+    @GetMapping(value = "peers", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun peers(@RequestHeader("Authorization") bearer: String): Map<String, List<CordaX500Name>> {
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        val nodeInfo = cnx.networkMapSnapshot()
+        return mapOf("peers" to nodeInfo.map { it.legalIdentities.first().name }
+                .filter { it.organisation !in (SERVICE_NAMES + myLegalName.organisation) })
+    }
+
+    @GetMapping(value = "/notaries", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun notaries(@RequestHeader("Authorization") bearer: String) : Map<String, List<CordaX500Name>>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("notaries" to cnx.notaryIdentities().map { it.name })
+    }
+
+    @GetMapping(value = "/flows", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun flows(@RequestHeader("Authorization") bearer: String) : Map<String, List<String>>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("flows" to proxy.registeredFlows())
+    }
+
+    @GetMapping(value = "/states", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun states(@RequestHeader("Authorization") bearer: String) : Map<String, List<StateAndRef<ContractState>>>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("states" to proxy.vaultQueryBy<ContractState>().states)
+    }
+
+    /**
+     * Returns the node's name.
+     */
+    @GetMapping(value = "/me", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun whoami(@RequestHeader("Authorization") bearer: String) {
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        mapOf("me" to myLegalName)
+    }
+
+    @GetMapping(value = "/cash", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun cash(@RequestHeader("Authorization") bearer: String): Map<Currency, Amount<Currency>>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return cnx.getCashBalances()
+    }
+
+    @GetMapping(value = "/cash/{currency}", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun cash(@PathVariable currency: String, @RequestHeader("Authorization") bearer: String): Map<String, Amount<Currency>>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("balance" to cnx.getCashBalance(Currency.getInstance(currency)))
+    }
+
+    @PostMapping(value = "/cash/issue", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun issueCash(@RequestBody input: CashIssueInput, @RequestHeader("Authorization") bearer: String): ResponseEntity<Map<String, String>> {
+
+        return try {  val cnx = AccessControl.getRpcProxy(rpc, bearer)
+
+            if(input.notary == null){
+                return ResponseEntity.badRequest().body(mapOf("error" to "'notary' must not be null"))
+            }
+
+            if(input.amount == null || input.amount.quantity <=0 ){
+                return ResponseEntity.badRequest().body(mapOf("error" to "'amount' has incorrect value"))
+            }
+
+            if(input.issuerBankPartyRef == null){
+                return ResponseEntity.badRequest().body(mapOf("error" to "'issuerBankPartyRef' must not be null"))
+            }
+
+            val notary = CordaX500Name.parse(input.notary)
+            val notaryParty = cnx.wellKnownPartyFromX500Name(notary) ?: return ResponseEntity.badRequest().body(mapOf("error" to "Party named ${input.notary} cannot be found"))
+
+
+            val signedTx = cnx.startTrackedFlow(::CashIssueFlow,
+                    Amount<Currency>(input.amount.quantity, Currency.getInstance(input.amount.currency)),
+                            OpaqueBytes(input.issuerBankPartyRef.toByteArray()),
+                                    notaryParty).returnValue.getOrThrow()
+
+            ResponseEntity.status(HttpStatus.OK).body(mapOf("transactionId" to "${signedTx!!.stx.tx.id}"))
+
+        } catch (ex: Throwable) {
+
+            ResponseEntity.badRequest().body(mapOf("error" to ex.message!!))
+        }
+    }
+
+    @PostMapping(value = "/cash/pay", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun payCash(@RequestBody input: CashTransferInput, @RequestHeader("Authorization") bearer: String): ResponseEntity<Map<String, String>> {
+
+        return try {
+            val cnx = AccessControl.getRpcProxy(rpc, bearer)
+
+            if (input.recipient == null) {
+                return ResponseEntity.badRequest().body(mapOf("error" to "'notary' must not be null"))
+            }
+
+            if (input.amount == null || input.amount.quantity <= 0) {
+                return ResponseEntity.badRequest().body(mapOf("error" to "'amount' has incorrect value"))
+            }
+
+            val recipient = CordaX500Name.parse(input.recipient)
+            val recipientParty = cnx.wellKnownPartyFromX500Name(recipient)
+                    ?: return ResponseEntity.badRequest().body(mapOf("error" to "Party named ${input.recipient} cannot be found"))
+
+
+            val signedTx = cnx.startTrackedFlow(::CashPaymentFlow,
+                    Amount<Currency>(input.amount.quantity, Currency.getInstance(input.amount.currency)),
+                    recipientParty,
+                    input.annonymous).returnValue.getOrThrow()
+
+            ResponseEntity.status(HttpStatus.OK).body(mapOf("transactionId" to "${signedTx!!.stx.tx.id}"))
+
+        } catch (ex: Throwable) {
+
+            ResponseEntity.badRequest().body(mapOf("error" to ex.message!!))
+        }
+    }
+    @PostMapping(value = "/cash/issue-pay", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun issuepayCash(@RequestBody input: CashIssueTransferInput, @RequestHeader("Authorization") bearer: String): ResponseEntity<Map<String, String>> {
+
+        return try {  val cnx = AccessControl.getRpcProxy(rpc, bearer)
+
+            if(input.recipient == null){
+                return ResponseEntity.badRequest().body(mapOf("error" to "'notary' must not be null"))
+            }
+
+            if(input.amount == null || input.amount.quantity <=0 ){
+                return ResponseEntity.badRequest().body(mapOf("error" to "'amount' has incorrect value"))
+            }
+
+            if(input.notary == null){
+                return ResponseEntity.badRequest().body(mapOf("error" to "'notary' must not be null"))
+            }
+
+            if(input.issuerRef == null){
+                return ResponseEntity.badRequest().body(mapOf("error" to "'issueRef' must not be null"))
+            }
+
+            val notary = CordaX500Name.parse(input.notary)
+            val notaryParty = cnx.wellKnownPartyFromX500Name(notary) ?: return ResponseEntity.badRequest().body(mapOf("error" to "Party named ${input.notary} cannot be found"))
+
+            val recipient = CordaX500Name.parse(input.recipient)
+            val recipientParty = cnx.wellKnownPartyFromX500Name(recipient) ?: return ResponseEntity.badRequest().body(mapOf("error" to "Party named ${input.recipient} cannot be found"))
+
+
+            val signedTx = cnx.startTrackedFlow(::CashIssueAndPaymentFlow,
+                    Amount<Currency>(input.amount.quantity, Currency.getInstance(input.amount.currency)),
+                    OpaqueBytes(input.issuerRef.toByteArray()),
+                    recipientParty,
+                    input.annonymous,
+                    notaryParty).returnValue.getOrThrow()
+
+            ResponseEntity.status(HttpStatus.OK).body(mapOf("transactionId" to "${signedTx!!.stx.tx.id}"))
+
+        } catch (ex: Throwable) {
+
+            ResponseEntity.badRequest().body(mapOf("error" to ex.message!!))
+        }
+    }
+
+    @PostMapping(value = "/cash/exit", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun exitCash(@RequestBody input: CashExitInput, @RequestHeader("Authorization") bearer: String): ResponseEntity<Map<String, String>> {
+
+        return try {
+            val cnx = AccessControl.getRpcProxy(rpc, bearer)
+
+            if(input.issuerRef == null){
+                return ResponseEntity.badRequest().body(mapOf("error" to "'issueRef' must not be null"))
+            }
+
+            if (input.amount == null || input.amount.quantity <= 0) {
+                return ResponseEntity.badRequest().body(mapOf("error" to "'amount' has incorrect value"))
+            }
+
+            val signedTx = cnx.startTrackedFlow(::CashExitFlow,
+                    Amount<Currency>(input.amount.quantity, Currency.getInstance(input.amount.currency)),
+                    OpaqueBytes(input.issuerRef.toByteArray())).returnValue.getOrThrow()
+
+            ResponseEntity.status(HttpStatus.OK).body(mapOf("transactionId" to "${signedTx!!.stx.tx.id}"))
+
+        } catch (ex: Throwable) {
+
+            ResponseEntity.badRequest().body(mapOf("error" to ex.message!!))
+        }
+    }
+
+    data class CashIssueInput(val amount: MoneyAmount, val issuerBankPartyRef: String, val notary: String)
+    data class CashTransferInput(val amount: MoneyAmount, val recipient: String, val annonymous: Boolean = false)
+    data class CashIssueTransferInput(val amount: MoneyAmount, val issuerRef: String, val recipient: String, val annonymous: Boolean = false, val notary: String)
+    data class CashExitInput(val amount: MoneyAmount, val issuerRef: String)
+    data class MoneyAmount(val quantity: Long, val currency: String)
+}

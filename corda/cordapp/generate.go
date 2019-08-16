@@ -89,7 +89,7 @@ func (g *Generator) GenerateApp(app *app.Config) error {
 		return fmt.Errorf("prepareData err %v", err)
 	}
 	fmt.Printf("template data=%v\n", data)
-	javaProject := languages.NewJava(g.Opts.TargetDir, data.App)
+	javaProject := languages.NewJava(path.Join(g.Opts.TargetDir, data.App), "cordapp")
 
 	err = javaProject.Init()
 	if err != nil {

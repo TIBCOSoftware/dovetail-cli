@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 
+	dc "github.com/TIBCOSoftware/dovetail-cli/commands/client"
 	"github.com/TIBCOSoftware/dovetail-cli/commands/contract"
 	"github.com/TIBCOSoftware/dovetail-cli/commands/dapp"
 	"github.com/spf13/cobra"
@@ -20,6 +21,7 @@ func init() {
 	RootCmd.AddCommand(versionCmd)
 	RootCmd.AddCommand(contract.ContractCmd)
 	RootCmd.AddCommand(dapp.DAppCmd)
+	RootCmd.AddCommand(dc.ClientCmd)
 }
 
 // RootCmd is the root command for dovetail cli

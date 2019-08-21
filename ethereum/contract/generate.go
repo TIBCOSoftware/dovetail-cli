@@ -79,20 +79,20 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
-	err = createCargoTomlFile(rustProject.GetTargetDir(), d.Opts.DovetailMacroPath, appConfig)
+	/*err = createCargoTomlFile(rustProject.GetTargetDir(), d.Opts.DovetailMacroPath, appConfig)
 	if err != nil {
 		return err
-	}
+	}*/
 
-	err = createMainFile(rustProject.GetAppDir(), modelFileName, appConfig)
+	/*err = createMainFile(rustProject.GetAppDir(), modelFileName, appConfig)
 	if err != nil {
 		return err
-	}
+	}*/
 
-	err = createLibFile(rustProject.GetAppDir(), modelFileName, appConfig)
+	/*err = createLibFile(rustProject.GetAppDir(), modelFileName, appConfig)
 	if err != nil {
 		return err
-	}
+	}*/
 
 	logger.Println("Generating Ethereum smart contract... Done")
 	return nil

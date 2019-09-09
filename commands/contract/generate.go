@@ -15,10 +15,10 @@ import (
 
 	"github.com/TIBCOSoftware/dovetail-cli/config"
 	corda "github.com/TIBCOSoftware/dovetail-cli/corda/contract"
-	ethereum "github.com/TIBCOSoftware/dovetail-cli/ethereum/contract"
 	fabric "github.com/TIBCOSoftware/dovetail-cli/hyperledger-fabric/contract"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
+	sawtooth "github.com/TIBCOSoftware/dovetail-cli/sawtooth/contract"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -127,8 +127,8 @@ func GetGenerator(blockchain string) (contract.Generator, error) {
 		return createFabricGenerator()
 	case strings.ToUpper(config.CORDA):
 		return createCordaGenerator()
-	case strings.ToUpper(config.ETHEREUM):
-		return createEthereumGenerator()
+	case strings.ToUpper(config.SAWTOOTH):
+		return createSawtoothGenerator()
 	default:
 		return nil, fmt.Errorf("Unsupported blockchain to deploy '%s'", blockchain)
 	}
@@ -158,10 +158,10 @@ func createCordaGenerator() (contract.Generator, error) {
 	return cordaGen, nil
 }
 
-func createEthereumGenerator() (contract.Generator, error) {
-	options := ethereum.NewGenOptions(target, modelfile, dovetailMacroPath)
+func createSawtoothGenerator() (contract.Generator, error) {
+	options := sawtooth.NewGenOptions(target, modelfile, dovetailMacroPath)
 
-	gen := ethereum.NewGenerator(options)
+	gen := sawtooth.NewGenerator(options)
 	return gen, nil
 }
 

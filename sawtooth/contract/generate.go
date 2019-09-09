@@ -4,7 +4,7 @@
  * in the license file that is distributed with this file.
  */
 
-// Package contract implements generate smart contract for ethereum
+// Package contract implements generate smart contract for hyperledger sawtooth
 package contract
 
 import (

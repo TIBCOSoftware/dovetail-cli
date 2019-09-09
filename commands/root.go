@@ -13,7 +13,9 @@ import (
 
 	dc "github.com/TIBCOSoftware/dovetail-cli/commands/client"
 	"github.com/TIBCOSoftware/dovetail-cli/commands/contract"
+	"github.com/TIBCOSoftware/dovetail-cli/commands/corda"
 	"github.com/TIBCOSoftware/dovetail-cli/commands/dapp"
+	"github.com/TIBCOSoftware/dovetail-cli/commands/fabric"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +24,8 @@ func init() {
 	RootCmd.AddCommand(contract.ContractCmd)
 	RootCmd.AddCommand(dapp.DAppCmd)
 	RootCmd.AddCommand(dc.ClientCmd)
+	RootCmd.AddCommand(fabric.FabricCmd)
+	RootCmd.AddCommand(corda.CordaCmd)
 }
 
 // RootCmd is the root command for dovetail cli

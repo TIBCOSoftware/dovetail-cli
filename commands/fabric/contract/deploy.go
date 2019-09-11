@@ -4,7 +4,7 @@
  * in the license file that is distributed with this file.
  */
 
-package fabric
+package contract
 
 import (
 	"fmt"
@@ -27,8 +27,8 @@ var (
 )
 
 func init() {
-	FabricCmd.AddCommand(deployCmd)
-	FabricCmd.AddCommand(instantiateCmd)
+	ContractCmd.AddCommand(deployCmd)
+	ContractCmd.AddCommand(instantiateCmd)
 
 	deployCmd.Flags().StringVar(&id, "id", "", "Id of the Chaincode")
 	deployCmd.Flags().StringVar(&path, "path", "", "Source folder of the generated Chaincode, e.g., /path/to/hlf/src/myapp")
@@ -65,7 +65,7 @@ var deployCmd = &cobra.Command{
 	Short: "Deploy the Chaincode to the chosen blockchain",
 	Long:  `Deploy the Chaincode to the chosen blockchain`,
 	Run: func(cmd *cobra.Command, args []string) {
-		version, err := FabricCmd.PersistentFlags().GetString("version")
+		version, err := ContractCmd.PersistentFlags().GetString("version")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -93,7 +93,7 @@ var instantiateCmd = &cobra.Command{
 	Long:  `Start instances for the Chaincode to the chosen blockchain`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		version, err := FabricCmd.PersistentFlags().GetString("version")
+		version, err := ContractCmd.PersistentFlags().GetString("version")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

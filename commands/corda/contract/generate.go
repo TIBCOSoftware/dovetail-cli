@@ -4,7 +4,7 @@
  * in the license file that is distributed with this file.
  */
 
-package corda
+package contract
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ var (
 )
 
 func init() {
-	CordaCmd.AddCommand(generateCmd)
+	ContractCmd.AddCommand(generateCmd)
 	generateCmd.PersistentFlags().StringP("target", "t", ".", "Destination path for generated artifacts, if a filename is given (With extension) the generated artifacts will compressed as a zip file with the file name provided")
 	generateCmd.Flags().StringP("state", "", "", "Optional, specify asset name to generate contract state, default to all assets in the specified namespace")
 	generateCmd.Flags().StringP("commands", "", "", "Optional, comma delimited list of transactions(commands) allowed for the selected state txn1,txn2,..., default to all transactions")
@@ -47,7 +47,7 @@ var generateCmd = &cobra.Command{
 	Long:  `Commands for generating contract artifacts`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		smversion, err := CordaCmd.PersistentFlags().GetString("version")
+		smversion, err := ContractCmd.PersistentFlags().GetString("version")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -80,6 +80,9 @@ var generateCmd = &cobra.Command{
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
+		}
+		if target == "" {
+			target = "./target"
 		}
 
 		target, err = filepath.Abs(target)

@@ -9,10 +9,16 @@ package corda
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/TIBCOSoftware/dovetail-cli/commands/corda/client"
+	"github.com/TIBCOSoftware/dovetail-cli/commands/corda/contract"
+	"github.com/TIBCOSoftware/dovetail-cli/commands/corda/dapp"
 )
 
 func init() {
-	CordaCmd.PersistentFlags().StringP("version", "v", "v1.0.0", "Contract version")
+	CordaCmd.AddCommand(client.ClientCmd)
+	CordaCmd.AddCommand(contract.ContractCmd)
+	CordaCmd.AddCommand(dapp.DAppCmd)
 }
 
 // CordaCmd is the command for smart contracts

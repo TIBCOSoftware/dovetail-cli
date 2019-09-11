@@ -9,10 +9,12 @@ package fabric
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/TIBCOSoftware/dovetail-cli/commands/fabric/contract"
 )
 
 func init() {
-	FabricCmd.PersistentFlags().StringP("version", "v", "v1.0.0", "fabric Chaincode version")
+	FabricCmd.AddCommand(contract.ContractCmd)
 }
 
 // FabricCmd is the command for hyperledger fabric app

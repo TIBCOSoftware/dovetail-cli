@@ -81,7 +81,7 @@ _testmain.go
 *.test
 *.prof
 tags
-.vscode/symbols.json
+.vscode/*
 .build-cache
 submodules/flogo-cicd/.build-cache
 ./Dockerfile

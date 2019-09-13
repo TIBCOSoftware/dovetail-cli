@@ -8,15 +8,10 @@
 package dapp
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/TIBCOSoftware/dovetail-cli/config"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	DAppCmd.PersistentFlags().StringP("blockchain", "b", config.CORDA, fmt.Sprintf("Target blockchain to deploy to (%s)", strings.Join(config.Blockchains(), "|")))
 	DAppCmd.PersistentFlags().StringP("version", "v", "v1.0.0", "dapp version")
 }
 

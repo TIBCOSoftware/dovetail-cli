@@ -12,7 +12,7 @@ import (
 	"os"
 
 	"github.com/TIBCOSoftware/dovetail-cli/commands/corda"
-	"github.com/TIBCOSoftware/dovetail-cli/commands/fabric"
+	//"github.com/TIBCOSoftware/dovetail-cli/commands/fabric"
 	"github.com/spf13/cobra"
 )
 

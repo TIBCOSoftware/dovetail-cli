@@ -18,7 +18,7 @@ import (
 
 func init() {
 	RootCmd.AddCommand(versionCmd)
-	RootCmd.AddCommand(fabric.FabricCmd)
+	//RootCmd.AddCommand(fabric.FabricCmd)
 	RootCmd.AddCommand(corda.CordaCmd)
 }
 

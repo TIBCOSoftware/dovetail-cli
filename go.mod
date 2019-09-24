@@ -32,6 +32,7 @@ require (
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/project-flogo/core v0.9.2
+	github.com/project-flogo/flow v0.9.3
 	github.com/prometheus/client_golang v1.0.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
 	github.com/spf13/cobra v0.0.3

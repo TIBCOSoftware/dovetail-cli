@@ -1,0 +1,15 @@
+
+package {{.NS}}
+
+import co.paralleluniverse.fibers.Suspendable
+import net.corda.core.flows.*
+import net.corda.core.contracts.StateRef
+
+@SchedulableFlow
+class {{.FlowName}}Impl(val ref: StateRef): FlowLogic<Unit> (){
+    @Suspendable
+    override fun call() {
+
+    }
+
+}

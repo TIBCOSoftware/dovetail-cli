@@ -3,22 +3,63 @@ package {{.NS}}
 import net.corda.core.identity.AbstractParty
 import java.util.Currency
 import net.corda.core.serialization.CordaSerializable
+import com.fasterxml.jackson.annotation.JsonIgnore
+import net.corda.core.contracts.*
+{{if eq .IsSchedulable true}}
+import net.corda.core.DeleteForDJVM
+import net.corda.core.flows.FlowLogicRefFactory
+{{end}}
+import com.tibco.dovetail.container.corda.*
 
+{{$input := .}}
 {{define "override"}}{{if eq .Name "linearId"}}override val{{else}}var{{end}}{{end}}
+{{define "parentClass"}}{{if eq .CordaClass ""}}ContractState{{else if eq .CordaClass "net.corda.core.contracts.LinearState"}}LinearState{{end}}{{if eq .IsSchedulable true}},SchedulableState{{end}}{{end}}
+@CordaSerializable
+@BelongsToContract({{.ContractClass}}::class)
 {{if eq .CordaClass ""}}
-@CordaSerializable
-class {{.Class}}({{range $i, $attr := .Attributes}}{{if ne $i 0}}{{","}}{{end}} var {{$attr.Name}}: {{ $attr| GetKotlinType}}{{if eq $attr.IsOptional true}}?{{end}}{{end}}):net.corda.core.contracts.ContractState{
+class {{.Class}}({{range $i, $attr := .Attributes}}{{if ne $i 0}}{{","}}{{end}} var {{$attr.Name}}: {{ $attr| GetKotlinType}}{{if eq $attr.IsOptional true}}?{{end}}{{end}}):{{template "parentClass" $input}}{
 {{else if eq .CordaClass "net.corda.core.contracts.LinearState"}}
-@CordaSerializable
-class {{.Class}}({{range $i, $attr := .Attributes}}{{if ne $i 0}}{{","}}{{end}}{{template "override" $attr}} {{$attr.Name}}: {{ $attr| GetKotlinType}}{{if eq $attr.IsOptional true}}?{{end}} {{end}}){{if .CordaClass}} : {{.CordaClass}}{{end}} {
+class {{.Class}}({{range $i, $attr := .Attributes}}{{if ne $i 0}}{{","}}{{end}}{{template "override" $attr}} {{$attr.Name}}: {{ $attr| GetKotlinType}}{{if eq $attr.IsOptional true}}?{{end}} {{end}}) : {{template "parentClass" $input}} {
 {{end}}   
     override val participants : List<AbstractParty>
+        @JsonIgnore
         get(){ 
             val participants = ArrayList<AbstractParty>()
             {{ $ | GetParticipants}}
             return participants
         }
+    {{if eq .IsSchedulable true}}
+    @DeleteForDJVM 
+    override fun nextScheduledActivity(thisStateRef: StateRef, flowLogicRefFactory: FlowLogicRefFactory): ScheduledActivity? {
+        val trig = {{.ContractClass}}Impl.getTrigger("{{.ScheduledActivity}}")
+        if(trig == null){
+            System.out.println("flow {{.ScheduledActivity}} is not found, nothing scheduled")
+            return null
+        }
+        else {
+            var ctnr = CordaContainer(java.util.Arrays.asList(this as ContractState),  "{{.Class}}_nextScheduledActivity")
+            ctnr.addContainerProperty("FlowLogicRefFactory", flowLogicRefFactory)
+            ctnr.addContainerProperty("StateRef", thisStateRef)
+            ctnr.addContainerProperty("Namespace", "{{.NS}}")
+            
+            var command = CordaCommandDataWithData()
+            command.putData("transactionInput", this)
+            command.putData("command", "{{.ScheduledActivity}}")
 
+            val txnSvc = CordaTransactionService(null, command)
+                             
+            trig.invoke(ctnr, txnSvc)
+            List<Object> tasks = ctnr.getContainerAsyncTasks(CordaContainer.TASK_SCHEDULEDACTIVITY);
+            if(tasks == null || tasks.isEmpty()) {
+            		return null;
+            } else {
+            		ScheduledActivity sa = (ScheduledActivity)tasks.get(0);
+                return sa;
+            }
+        }
+
+    }
+    {{end}}
     override fun toString() : String{
          var json:String = "{"
          {{range $attr := .Attributes}}

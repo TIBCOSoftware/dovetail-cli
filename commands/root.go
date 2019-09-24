@@ -10,14 +10,16 @@ package commands
 import (
 	"fmt"
 	"os"
-	
-	"github.com/TIBCOSoftware/dovetail-cli/commands/contract"
+
+	"github.com/TIBCOSoftware/dovetail-cli/commands/corda"
+	//"github.com/TIBCOSoftware/dovetail-cli/commands/fabric"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	RootCmd.AddCommand(versionCmd)
-	RootCmd.AddCommand(contract.ContractCmd)
+	//RootCmd.AddCommand(fabric.FabricCmd)
+	RootCmd.AddCommand(corda.CordaCmd)
 }
 
 // RootCmd is the root command for dovetail cli

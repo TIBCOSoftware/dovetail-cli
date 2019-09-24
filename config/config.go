@@ -5,7 +5,6 @@
  */
 package config
 
-
 // Blockchains Returns a list of the supported blockchains
 func Blockchains() []string {
 	return []string{HYPERLEDGER_FABRIC, CORDA}

@@ -1,0 +1,133 @@
+package {{.NS}}.client.webserver.controller
+
+import net.corda.core.node.services.vault.Builder
+import net.corda.core.node.services.vault.ColumnPredicate
+import net.sf.jsqlparser.expression.LongValue
+import net.sf.jsqlparser.expression.operators.relational.*
+import net.sf.jsqlparser.parser.CCJSqlParserUtil
+import java.time.Instant
+import net.sf.jsqlparser.expression.StringValue
+
+
+object FilterCriteriaBuilder {
+    fun parseFilterForQuantity(filter: String): ColumnPredicate<Long> {
+        val expr = CCJSqlParserUtil.parseCondExpression(filter)
+
+        when (expr) {
+            is Between -> {
+                val start = expr.betweenExpressionStart as LongValue
+                val end = expr.betweenExpressionEnd as LongValue
+                return Builder.between(start.value, end.value)
+            }
+
+            is GreaterThan -> {
+                val value = expr.rightExpression as LongValue
+                return Builder.greaterThan(value.value)
+            }
+
+            is GreaterThanEquals ->{
+                val value = expr.rightExpression as LongValue
+                return Builder.greaterThanOrEqual(value.value)
+            }
+
+            is MinorThan -> {
+                val value = expr.rightExpression as LongValue
+                return Builder.lessThan(value.value)
+            }
+
+            is MinorThanEquals -> {
+                val value = expr.rightExpression as LongValue
+                return Builder.lessThanOrEqual(value.value)
+            }
+
+            is EqualsTo -> {
+                val value = expr.rightExpression as LongValue
+                return Builder.equal(value.value)
+            }
+
+            is NotEqualsTo -> {
+                val value = expr.rightExpression as LongValue
+                return Builder.notEqual(value.value)
+            }
+
+            is InExpression -> {
+                var items = ArrayList<Long>()
+                val itemsList = expr.rightItemsList.accept(object : ItemsListVisitorAdapter() {
+                    override fun visit(expressionList: ExpressionList ){
+                        expressionList.expressions.map {  items.add((it as LongValue).value) }
+                    }
+                })
+
+                if(expr.isNot)
+                    return Builder.notIn(items)
+                else
+                    return Builder.`in`(items)
+            }
+
+            else -> {
+                throw RuntimeException("$expr is not supported" )
+            }
+        }
+    }
+
+
+    fun parseFilterForInstant(filter: String): ColumnPredicate<Instant> {
+        val expr = CCJSqlParserUtil.parseCondExpression(filter)
+
+        when (expr) {
+            is Between -> {
+                val start = expr.betweenExpressionStart as StringValue
+                val end = expr.betweenExpressionEnd as StringValue
+                return Builder.between(Instant.parse(start.value), Instant.parse(end.value))
+            }
+
+            is GreaterThan -> {
+                val value = expr.rightExpression as StringValue
+                return Builder.greaterThan(Instant.parse(value.value))
+            }
+
+            is GreaterThanEquals ->{
+                val value = expr.rightExpression as StringValue
+                return Builder.greaterThanOrEqual(Instant.parse(value.value))
+            }
+
+            is MinorThan -> {
+                val value = expr.rightExpression as StringValue
+                return Builder.lessThan(Instant.parse(value.value))
+            }
+
+            is MinorThanEquals -> {
+                val value = expr.rightExpression as StringValue
+                return Builder.lessThanOrEqual(Instant.parse(value.value))
+            }
+
+            is EqualsTo -> {
+                val value = expr.rightExpression as StringValue
+                return Builder.equal(Instant.parse(value.value))
+            }
+
+            is NotEqualsTo -> {
+                val value = expr.rightExpression as StringValue
+                return Builder.notEqual(Instant.parse(value.value))
+            }
+
+            is InExpression -> {
+                var items = ArrayList<Instant>()
+                val itemsList = expr.rightItemsList.accept(object : ItemsListVisitorAdapter() {
+                    override fun visit(expressionList: ExpressionList ){
+                        expressionList.expressions.map {  items.add((Instant.parse((it as StringValue).value))) }
+                    }
+                })
+
+                if(expr.isNot)
+                    return Builder.notIn(items)
+                else
+                    return Builder.`in`(items)
+            }
+
+            else -> {
+                throw RuntimeException("$expr is not supported" )
+            }
+        }
+    }
+}

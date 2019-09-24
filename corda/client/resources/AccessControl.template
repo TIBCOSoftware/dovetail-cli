@@ -1,0 +1,22 @@
+package {{.NS}}.client.webserver.controller
+
+import {{.NS}}.client.webserver.NodeRPCConnection
+import net.corda.core.messaging.CordaRPCOps
+import org.apache.commons.lang.StringUtils
+import org.springframework.security.core.userdetails.UsernameNotFoundException
+
+object AccessControl {
+     fun getRpcProxy(rpc: NodeRPCConnection, token: String): CordaRPCOps {
+        //  val token = req.getHeader("Authorization")
+        val accesstoken = StringUtils.removeStart(token, "Bearer").trim()
+        if(accesstoken.isEmpty())
+            throw UsernameNotFoundException("authorization header is not set with bearer token")
+
+        val cnx = rpc.getProxy(accesstoken)
+
+        if(cnx == null)
+            throw UsernameNotFoundException("Cannot find user with authentication token=" + accesstoken)
+
+        return cnx
+    }
+}

@@ -1,0 +1,4 @@
+package {{.NS}}.client.webserver.controller
+
+val SERVICE_NAMES = listOf("Notary", "Network Map Service")
+data class MoneyAmount(val quantity: Long, val currency: String)

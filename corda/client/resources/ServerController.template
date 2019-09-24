@@ -1,0 +1,88 @@
+package {{.NS}}.client.webserver.controller
+
+import {{.NS}}.client.webserver.NodeRPCConnection
+import net.corda.core.identity.CordaX500Name
+import net.corda.core.identity.Party
+import net.corda.core.utilities.NetworkHostAndPort
+import org.springframework.web.bind.annotation.*
+import java.time.LocalDateTime
+import java.time.ZoneId
+import org.slf4j.LoggerFactory
+import org.springframework.http.MediaType
+
+
+/**
+ * A CorDapp-agnostic controller that exposes standard endpoints.
+ */
+@RestController
+@RequestMapping("/server") // The paths for GET and POST requests are relative to this base path.
+class ServerController(val rpc: NodeRPCConnection) {
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(RestController::class.java)
+    }
+
+    private val proxy = rpc.proxy
+    private val myLegalName = rpc.proxy.nodeInfo().legalIdentities.first().name
+
+    @GetMapping(value = "/status", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun status() = mapOf("status" to "200")
+
+    @GetMapping(value = "/time", produces =  arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun serverTime(@RequestHeader("Authorization") bearer: String) : Map<String, String>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("servertime" to LocalDateTime.ofInstant(proxy.currentNodeTime(), ZoneId.of("UTC")).toString())
+    }
+
+    @GetMapping(value = "/addresses", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun addresses(@RequestHeader("Authorization") bearer: String): Map<String, List<NetworkHostAndPort>> {
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+
+        return mapOf("addresses" to cnx.nodeInfo().addresses)
+    }
+
+    @GetMapping(value = "/identities", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun identities(@RequestHeader("Authorization") bearer: String) :Map<String, List<Party>> {
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("identities" to cnx.nodeInfo().legalIdentities)
+    }
+
+    @GetMapping(value = "/platformversion", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun platformVersion(@RequestHeader("Authorization") bearer: String) : Map<String, String>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("platformveresion" to cnx.nodeInfo().platformVersion.toString())
+    }
+
+    /**
+     * Returns all parties registered with the network map service. These names can be used to look up identities using
+     * the identity service.
+     */
+    @GetMapping(value = "peers", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun peers(@RequestHeader("Authorization") bearer: String): Map<String, List<CordaX500Name>> {
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        val nodeInfo = cnx.networkMapSnapshot()
+        return mapOf("peers" to nodeInfo.map { it.legalIdentities.first().name }
+                .filter { it.organisation !in (SERVICE_NAMES + myLegalName.organisation) })
+    }
+
+    @GetMapping(value = "/notaries", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun notaries(@RequestHeader("Authorization") bearer: String) : Map<String, List<CordaX500Name>>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("notaries" to cnx.notaryIdentities().map { it.name })
+    }
+
+    @GetMapping(value = "/flows", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    private fun flows(@RequestHeader("Authorization") bearer: String) : Map<String, List<String>>{
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        return mapOf("flows" to cnx.registeredFlows())
+    }
+
+    /**
+     * Returns the node's name.
+     */
+    @GetMapping(value = "/me", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    fun whoami(@RequestHeader("Authorization") bearer: String) {
+        val cnx = AccessControl.getRpcProxy(rpc, bearer)
+        mapOf("me" to myLegalName)
+    }
+}

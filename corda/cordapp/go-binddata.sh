@@ -1,0 +1,1 @@
+go-bindata -pkg cordapp -o resources.go resources/

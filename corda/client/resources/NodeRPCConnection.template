@@ -1,0 +1,83 @@
+package {{.NS}}.client.webserver
+
+import net.corda.client.rpc.CordaRPCClient
+import net.corda.client.rpc.CordaRPCClientConfiguration
+import net.corda.client.rpc.CordaRPCConnection
+import net.corda.core.messaging.CordaRPCOps
+import net.corda.core.utilities.NetworkHostAndPort
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
+import java.time.Duration
+import java.util.*
+import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
+
+private const val CORDA_USER_NAME = "config.rpc.username"
+private const val CORDA_USER_PASSWORD = "config.rpc.password"
+private const val CORDA_NODE_HOST = "config.rpc.host"
+private const val CORDA_RPC_PORT = "config.rpc.port"
+
+/**
+ * Wraps an RPC connection to a Corda node.
+ *
+ * The RPC connection is configured using command line arguments.
+ *
+ * @param host The host of the node we are connecting to.
+ * @param rpcPort The RPC port of the node we are connecting to.
+ * @param username The username for logging into the RPC client.
+ * @param password The password for logging into the RPC client.
+ * @property proxy The RPC proxy.
+ */
+@Component
+open class NodeRPCConnection(
+        @Value("\${$CORDA_NODE_HOST}") private val host: String,
+        @Value("\${$CORDA_USER_NAME}") private val username: String,
+        @Value("\${$CORDA_USER_PASSWORD}") private val password: String,
+        @Value("\${$CORDA_RPC_PORT}") private val rpcPort: Int): AutoCloseable {
+
+    private var rpcConnections = LinkedHashMap<String, CordaRPCConnection>()
+    private var proxies = LinkedHashMap<String, CordaRPCOps>()
+
+    private lateinit var rpcClient: CordaRPCClient
+
+    lateinit var proxy: CordaRPCOps
+        private set
+
+    @PostConstruct
+    fun initialiseNodeRPCConnection() {
+            val rpcAddress = NetworkHostAndPort(host, rpcPort)
+
+            val rpcConfig = CordaRPCClientConfiguration(connectionRetryInterval=Duration.ofSeconds(1),
+                    maxReconnectAttempts=-1)
+
+            rpcClient = CordaRPCClient(rpcAddress, rpcConfig)
+
+            val rpcConnection = rpcClient.start(username, password)
+            proxy = rpcConnection.proxy
+    }
+
+    @PreDestroy
+    override fun close() {
+        rpcConnections.forEach { t, u ->  u.notifyServerAndClose() }
+    }
+
+    fun getProxy(token: String): CordaRPCOps? {
+        return proxies.get(token);
+    }
+
+    fun connect(username: String, password: String): String{
+        val rpcConnection = rpcClient.start(username, password)
+        val token = UUID.randomUUID().toString()
+        rpcConnections.put(token, rpcConnection)
+        proxies.put(token, rpcConnection.proxy)
+        return  token
+    }
+
+    fun disconnect(token: String){
+        val cnx = rpcConnections.remove(token)
+        if(cnx != null)
+            cnx.proxy
+
+        proxies.remove(token)
+    }
+}

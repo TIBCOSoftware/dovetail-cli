@@ -23,6 +23,8 @@ import (
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
 	wgutil "github.com/TIBCOSoftware/dovetail-cli/util"
+	"github.com/project-flogo/core/app"
+	"github.com/project-flogo/core/trigger"
 )
 
 var logger = log.New(os.Stdout, "", log.LstdFlags)
@@ -38,6 +40,7 @@ type Options struct {
 	Commands  []string
 	TargetDir string
 	Namespace string
+	Pom       string
 }
 
 type DataState struct {
@@ -48,6 +51,7 @@ type DataState struct {
 	Attributes        []model.ResourceAttribute
 	Parent            string
 	Participants      []string
+	ExitKeys          []string
 	IsSchedulable     bool
 	ScheduledActivity string
 }
@@ -58,12 +62,24 @@ type ContractData struct {
 	Flow          string
 	Commands      []Command
 	States        []DataState
+	AppClass      string
 }
 
+type AppData struct {
+	NS      string
+	AppName string
+}
 type Command struct {
 	Name       string
 	NS         string
 	Attributes []model.ResourceAttribute
+}
+
+type ModelResources struct {
+	AppName      string
+	Assets       []string
+	Transactions []string
+	Schemas      map[string]string
 }
 
 var models map[string]*model.ResourceMetadataModel
@@ -74,26 +90,19 @@ func NewGenerator(opts *Options) contract.Generator {
 }
 
 // NewOptions is the options constructor
-func NewOptions(flowModel string, version string, state string, commands []string, target, ns string) *Options {
-	return &Options{ModelFile: flowModel, Version: version, State: state, Commands: commands, TargetDir: target, Namespace: ns}
+func NewOptions(flowModel string, version string, state string, commands []string, target, ns string, pom string) *Options {
+	return &Options{ModelFile: flowModel, Version: version, State: state, Commands: commands, TargetDir: target, Namespace: ns, Pom: pom}
 }
 
 // Generate generates a smart contract for the given options
 func (g *Generator) Generate() error {
 	logger.Println("Generating artifacts for Corda...")
-
-	flow, err := model.ParseFlowApp(g.Opts.ModelFile)
+	appCfg, err := model.ParseApp(g.Opts.ModelFile)
 	if err != nil {
-		return fmt.Errorf("error parsing flow app json file, err %v", err)
+		return err
 	}
 
-	models = parseAllResources(flow.Schemas)
-	data, concepts, err := prepareContractStateData(g.Opts, flow, models)
-	if err != nil {
-		return fmt.Errorf("prepareContractStateData err %v", err)
-	}
-
-	javaProject := languages.NewJava(g.Opts.TargetDir, flow.AppName)
+	javaProject := languages.NewJava(g.Opts.TargetDir, appCfg.Name)
 
 	err = javaProject.Init()
 	if err != nil {
@@ -102,43 +111,48 @@ func (g *Generator) Generate() error {
 
 	defer javaProject.Cleanup()
 
+	resources, schedulables, isComposer, err := parseFlowApp(appCfg)
+	if err != nil {
+		return fmt.Errorf("error parsing flow app json file, err %v", err)
+	}
+
+	appdata := AppData{AppName: appCfg.Name}
+	if g.Opts.Namespace != "" {
+		appdata.NS = g.Opts.Namespace
+	} else {
+		appdata.NS, _ = splitNamespace(resources[0].Transactions[0], "")
+	}
+
 	//create directories
-	resourcedir := wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "src/main/resources", strings.Replace(g.Opts.Namespace, ".", "/", -1))
+	resourcedir := wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "src/main/resources", strings.Replace(appdata.NS, ".", "/", -1))
 	kotlindir := wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "src/main/kotlin")
 	wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "target/kotlin/classes")
 
 	//create ContractImpl (flows)
-	err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "kotlin.contractimpl.template", fmt.Sprintf("%s%s", data.ContractClass, "Impl.kt"))
+	err = createKotlinFile(kotlindir, appdata.NS, appdata, "kotlin.contractimpl.template", fmt.Sprintf("%s%s", appdata.AppName, "Impl.kt"))
 	if err != nil {
 		return fmt.Errorf("createContractImplFile kotlin.contractimpl.template err %v", err)
 	}
-	//create ContractState
-	for _, s := range data.States {
-		err = createKotlinFile(kotlindir, g.Opts.Namespace, s, "kotlin.state.template", fmt.Sprintf("%s%s", s.Class, ".kt"))
-		if err != nil {
-			return fmt.Errorf("createContractStateFile kotlin.state.template err %v", err)
-		}
-	}
-
-	//create Contract
-	err = createKotlinFile(kotlindir, g.Opts.Namespace, data, "kotlin.contract.template", fmt.Sprintf("%s%s", data.ContractClass, ".kt"))
-	if err != nil {
-		return fmt.Errorf("createContractFile kotlin.contract.template err %v", err)
-	}
 
 	//create Resource
-	err = createResourceFiles(resourcedir, g.Opts, models)
+	err = createResourceFiles(resourcedir, g.Opts)
 	if err != nil {
 		return fmt.Errorf("createResourceFiles err %v", err)
 	}
 
-	//create common Concept files
-	err = createConceptKotlinFiles(kotlindir, "kotlin.concept.template", concepts)
-	if err != nil {
-		return fmt.Errorf("createConceptJavaFiles kotlin.concept.template err %v", err)
+	if isComposer {
+		err = createComposerContractFiles(kotlindir, g.Opts, resources[0], schedulables, appdata.NS+"."+appdata.AppName)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = createDovetailContractFiles(kotlindir, g.Opts, resources, schedulables, appdata.NS+"."+appdata.AppName)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = compileAndJar(javaProject.GetAppDir(), g.Opts.Namespace, flow.AppName, g.Opts.Version, "kotlin.pom.xml")
+	err = compileAndJar(javaProject.GetAppDir(), appdata.NS, appdata.AppName, g.Opts.Version, "kotlin.pom.xml", g.Opts.Pom)
 	if err != nil {
 		return fmt.Errorf("compileAndJar kotlin.pom.xml err %v", err)
 	}
@@ -174,21 +188,31 @@ func (g *Generator) Generate() error {
 	return nil
 }
 
-func compileAndJar(targetdir, ns, clazz, version string, pomf string) error {
+func compileAndJar(targetdir, ns, clazz, version string, pomf string, dependencyFile string) error {
 	logger.Printf("Compile smart contract artifacts")
 	pom, err := Asset("resources/" + pomf)
 	if err != nil {
 		return err
 	}
-	err = wgutil.CopyContent(pom, path.Join(targetdir, pomf))
+
+	dep := ""
+
+	if dependencyFile != "" {
+		deppom, err := ioutil.ReadFile(dependencyFile)
+		if err != nil {
+			return err
+		}
+
+		dep = string(deppom)
+	}
+	newpom := strings.Replace(string(pom), "%%external%%", dep, 1)
+
+	err = wgutil.CopyContent([]byte(newpom), path.Join(targetdir, pomf))
 	if err != nil {
 		return err
 	}
+
 	err = wgutil.MvnPackage(ns, clazz, version, pomf, targetdir)
-	/*args := []string{"install", "-f", path.Join(targetdir, pomf), "-DbaseDir=" + targetdir, "-Dversion=" + version, "-DgroupId=" + ns, "-DartifactId=" + clazz}
-	cmd := exec.Command("mvn", args...)
-	logger.Printf("mvn command %v\n", cmd.Args)
-	out, err := cmd.Output()*/
 	if err != nil {
 		return err
 	}
@@ -209,10 +233,9 @@ func createConceptKotlinFiles(dir, template string, concepts []DataState) error 
 	return nil
 }
 
-func createResourceFiles(dir string, opts *Options, models map[string]*model.ResourceMetadataModel) error {
+func createResourceFiles(resourcedir string, opts *Options) error {
 	logger.Println("Copy resource file - transactions.json ...")
-
-	err := wgutil.CopyFile(opts.ModelFile, path.Join(dir, "transactions.json"))
+	err := wgutil.CopyFile(opts.ModelFile, path.Join(resourcedir, "transactions.json"))
 	if err != nil {
 		return fmt.Errorf("Error creating transaction.json file, error %v", err)
 	}
@@ -258,210 +281,7 @@ func createKotlinFile(dir, ns string, data interface{}, templateFile string, fil
 	writer.Flush()
 	return nil
 }
-func prepareContractStateData(opts *Options, flow *model.ModelResources, models map[string]*model.ResourceMetadataModel) (data ContractData, conceptdata []DataState, err error) {
-	logger.Println("Prepare contract state data ....")
-	assets := flow.Assets
-	transactions := flow.Transactions
-	data = ContractData{NS: opts.Namespace, Flow: opts.ModelFile}
 
-	fmt.Printf("***** Contract name = %s.%s%s\n", opts.Namespace, flow.AppName, "Contract")
-	data.ContractClass = fmt.Sprintf("%s%s", flow.AppName, "Contract")
-	conceptdata = make([]DataState, 0)
-	states := make([]DataState, 0)
-	concepts := make(map[string]string)
-
-	//assets
-	if opts.State != "" {
-		state, process, err := prepareState(opts.State, opts.Namespace, models, concepts)
-		if err != nil {
-			return data, conceptdata, err
-		}
-		state.ContractClass = fmt.Sprintf("%s.%s%s", opts.Namespace, flow.AppName, "Contract")
-		if process {
-			if schedulable, ok := flow.Schedulables[opts.State]; ok {
-				state.IsSchedulable = true
-				state.ScheduledActivity = schedulable
-			}
-			states = append(states, state)
-		}
-	} else {
-		for _, asset := range assets {
-			metadata, ok := models[asset]
-			if ok && !metadata.Metadata.IsAbstract {
-				state, process, err := prepareState(asset, opts.Namespace, models, concepts)
-				if err != nil {
-					return data, conceptdata, err
-				}
-				state.ContractClass = fmt.Sprintf("%s.%s%s", opts.Namespace, flow.AppName, "Contract")
-				if process {
-					if schedulable, ok := flow.Schedulables[asset]; ok {
-						state.IsSchedulable = true
-						state.ScheduledActivity = schedulable
-					}
-					states = append(states, state)
-				}
-			}
-		}
-	}
-	data.States = states
-
-	//transactions
-	var commands []string
-	if len(opts.Commands) > 0 {
-		commands = opts.Commands
-	} else {
-		commands = transactions
-	}
-	commandData, err := prepareCommands(opts.Namespace, commands, models, concepts)
-	if err != nil {
-		return data, conceptdata, err
-	}
-	data.Commands = commandData
-
-	//common concepts
-	for _, nm := range concepts {
-		concept := DataState{}
-		ns, clazz := splitNamespace(nm, opts.Namespace)
-		concept.NS = ns
-		concept.Class = clazz
-		concept.Parent = models[nm].Metadata.Parent
-		concept.Attributes = make([]model.ResourceAttribute, len(models[nm].Attributes))
-		copy(concept.Attributes, models[nm].Attributes)
-		conceptdata = append(conceptdata, concept)
-	}
-	return data, conceptdata, nil
-}
-func prepareState(asset, targetns string, models map[string]*model.ResourceMetadataModel, concepts map[string]string) (state DataState, generate bool, err error) {
-	state = DataState{}
-	ns, class := splitNamespace(asset, targetns)
-	if ns != targetns {
-		return DataState{}, false, nil
-	}
-
-	state.NS = ns
-	state.Class = class
-	state.CordaClass = strings.TrimSpace(getParentCordaClass(asset, models))
-
-	state.Attributes = make([]model.ResourceAttribute, len(models[asset].Attributes))
-	metadata := models[asset]
-	copy(state.Attributes, metadata.Attributes)
-
-	//check CordaParticipants decorator
-	participants := make([]string, 0)
-	for _, decorator := range metadata.Metadata.Decorators {
-		if decorator.Name == "CordaParticipants" {
-			for _, arg := range decorator.Args {
-				participants = append(participants, arg)
-			}
-			break
-		}
-	}
-
-	for idx, p := range participants {
-		if !strings.HasPrefix(p, "$tx.") {
-			return state, false, fmt.Errorf("CordaParticipants %s should be in the format of $tx.path.to.party", p)
-		}
-		participants[idx] = strings.TrimPrefix(p, "$tx.")
-	}
-
-	if len(participants) == 0 {
-		//default to all top level party objects
-		for _, attr := range state.Attributes {
-			if attr.Type == "com.tibco.dovetail.system.Party" && attr.IsRef {
-				participants = append(participants, toParticipant(attr.Name, attr))
-			}
-		}
-	}
-
-	if len(participants) == 0 {
-		return state, false, fmt.Errorf("There must be at least one Party objects defined either as top Asset attribute or through CordaParticipants decorator")
-	}
-
-	state.Participants = participants
-
-	for idx, attr := range state.Attributes {
-		m := models[attr.Type]
-		if m != nil {
-			if m.Metadata.CordaClass != "" {
-				state.Attributes[idx].Type = strings.TrimSpace(m.Metadata.CordaClass)
-			}
-		}
-	}
-
-	addCommonConcept(asset, models, concepts)
-	return state, true, nil
-}
-func prepareCommands(targetns string, commands []string, models map[string]*model.ResourceMetadataModel, concepts map[string]string) ([]Command, error) {
-	data := make([]Command, 0)
-	for _, cmd := range commands {
-		logger.Printf("Procesing command %s\n", cmd)
-		command := Command{}
-		command.Attributes = make([]model.ResourceAttribute, len(models[cmd].Attributes))
-		ns, nm := splitNamespace(cmd, targetns)
-		if ns != targetns {
-			continue
-		}
-		command.Name = nm
-		command.NS = ns
-
-		m := models[cmd]
-		if m == nil {
-			return nil, fmt.Errorf("%s is not found in model", cmd)
-		}
-
-		isQuery := false
-		for _, decorator := range m.Metadata.Decorators {
-			if decorator.Name == "Query" {
-				isQuery = true
-				break
-			}
-		}
-
-		if isQuery {
-			continue
-		}
-		copy(command.Attributes, models[cmd].Attributes)
-		data = append(data, command)
-
-		addCommonConcept(cmd, models, concepts)
-	}
-	return data, nil
-}
-func addCommonConcept(resource string, models map[string]*model.ResourceMetadataModel, concepts map[string]string) map[string]string {
-	am, ok := models[resource]
-	if ok == true {
-		if am.Metadata.Parent != "" {
-			concepts = addCommonConcept(am.Metadata.Parent, models, concepts)
-		}
-
-		for _, attr := range am.Attributes {
-			m := models[attr.Type]
-			if m != nil && strings.Compare(strings.ToUpper(m.Metadata.Type), "CONCEPT") == 0 && m.Metadata.CordaClass == "" {
-				concepts[attr.Type] = attr.Type
-				concepts = addCommonConcept(attr.Type, models, concepts)
-			}
-		}
-	}
-	return concepts
-}
-
-func getParentCordaClass(asset string, models map[string]*model.ResourceMetadataModel) string {
-	model := models[asset]
-	cordaClass := ""
-	if model.Metadata.Parent != "" {
-		parent := models[model.Metadata.Parent]
-		if parent != nil {
-			if parent.Metadata.CordaClass != "" {
-				cordaClass = parent.Metadata.CordaClass
-			} else {
-				if parent.Metadata.Parent != "" {
-					return getParentCordaClass(model.Metadata.Parent, models)
-				}
-			}
-		}
-	}
-	return cordaClass
-}
 func parseAllResources(schemas map[string]string) map[string]*model.ResourceMetadataModel {
 	models := make(map[string]*model.ResourceMetadataModel)
 	for r, s := range schemas {
@@ -580,10 +400,15 @@ func GetKotlinTypeNoArray(attr model.ResourceAttribute) string {
 			datatype = "Int"
 			break
 		case "Double":
+		case "Decimal":
 			datatype = "java.math.BigDecimal"
 			break
 		case "DateTime":
+		case "com.tibco.dovetail.system.Instant":
 			datatype = "java.time.Instant"
+			break
+		case "com.tibco.dovetail.system.LocalDate":
+			datatype = "java.time.LocalDate"
 			break
 		case "com.tibco.dovetail.system.Party":
 			datatype = "AbstractParty"
@@ -595,7 +420,12 @@ func GetKotlinTypeNoArray(attr model.ResourceAttribute) string {
 			datatype = "net.corda.finance.contracts.asset.Cash.State"
 			break
 		case "com.tibco.dovetail.system.Amount":
+		case "com.tibco.dovetail.system.Amount<Currency>":
 			datatype = "net.corda.core.contracts.Amount<Currency>"
+			break
+		case "com.tibco.dovetail.system.UniqueIdentifier":
+			datatype = "net.corda.core.contracts.UniqueIdentifier"
+			break
 		}
 	}
 
@@ -651,7 +481,7 @@ func GetParticipants(state DataState) string {
 					}
 				}
 			} else {
-				participants = append(participants, p)
+				participants = append(participants, "	participants.add("+p+")")
 			}
 		}
 	}
@@ -680,4 +510,56 @@ func GetFlowSha256(modelfile string) string {
 	content, _ := ioutil.ReadFile(modelfile)
 	sum := sha256.Sum256(content)
 	return fmt.Sprintf("%x", sum)
+}
+
+func parseFlowApp(appCfg *app.Config) ([]ModelResources, map[string]string, bool, error) {
+	triggerByname := make(map[string]*trigger.Config)
+	isComposer := false
+	isDovetail := false
+	for _, t := range appCfg.Triggers {
+		if t.Ref == "#transaction" {
+			isComposer = true
+		} else if t.Ref == "#action" {
+			isDovetail = true
+		}
+		triggerByname[t.Ref] = t
+	}
+
+	if isComposer && isDovetail {
+		return nil, nil, isComposer, fmt.Errorf("Cann't mix smart contract trigger types, only one is supported")
+	}
+
+	if !isComposer && !isDovetail {
+		return nil, nil, isComposer, fmt.Errorf("There is no smart contract transactions defined")
+	}
+
+	resources := make([]ModelResources, 0)
+	if isComposer {
+		txnTrigger := triggerByname["#transaction"]
+		model, err := processComposerTrigger(appCfg.Name, txnTrigger)
+		if err != nil {
+			return nil, nil, isComposer, err
+		}
+		resources = append(resources, model)
+	} else if isDovetail {
+		txnTrigger := triggerByname["#action"]
+		rs, err := processDovetailTrigger(txnTrigger)
+		if err != nil {
+			return nil, nil, isComposer, err
+		}
+		resources = rs
+	}
+
+	schedulables := make(map[string]string)
+	schedulerTrigger, ok := triggerByname["CordaSmartContractEventScheduler"]
+	if ok {
+		for _, h := range schedulerTrigger.Handlers {
+			schedulableState, ok := h.Settings["assetName"]
+			if !ok {
+				return nil, nil, isComposer, fmt.Errorf("Schedulable asset is not defined")
+			}
+			schedulables[schedulableState.(string)] = model.GetFlowName(h.Actions[0].Settings["flowURI"].(string))
+		}
+	}
+	return resources, schedulables, isComposer, nil
 }

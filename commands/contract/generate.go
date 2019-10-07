@@ -31,6 +31,7 @@ var (
 	smversion         string
 	modelfile         string
 	enableTxnSecurity bool
+	pom               string
 )
 
 func init() {
@@ -41,6 +42,7 @@ func init() {
 	generateCmd.Flags().StringP("namespace", "", "", "Corda only, required, composer model namespace")
 	generateCmd.Flags().BoolP("enableTransactionSecurity", "", false, "true to enable transaction level security for the targetd blockchain if supported")
 	generateCmd.Flags().StringVarP(&modelfile, "modelfile", "m", "", "Smart contract flow model file")
+	generateCmd.Flags().StringVarP(&pom, "dependency-file", "", "", "dependency xml file")
 
 	generateCmd.MarkFlagRequired("target")
 	generateCmd.MarkFlagRequired("modelfile")
@@ -148,7 +150,7 @@ func createCordaGenerator() (contract.Generator, error) {
 		}
 	}
 
-	options := corda.NewOptions(modelfile, smversion, cordaState, cmds, target, cordaNS)
+	options := corda.NewOptions(modelfile, smversion, cordaState, cmds, target, cordaNS, pom)
 	cordaGen := corda.NewGenerator(options)
 	return cordaGen, nil
 }

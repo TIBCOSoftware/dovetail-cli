@@ -29,19 +29,28 @@ type Generator struct {
 }
 
 type Options struct {
-	ModelFile        string
-	CorDAppVersion   string
-	TargetDir        string
-	CordAppNamespace string
+	CorDAppModelFile  string
+	CorDAppVersion    string
+	TargetDir         string
+	CordAppNamespace  string
+	ContractModelFile string
+	DependencyFile    string
 }
 
 type InitiatorFlowConfig struct {
 	Attrs []model.ResourceAttribute
 }
+
+type AllAssets struct {
+	NS     string
+	Assets []string
+}
+
 type DataState struct {
 	NS             string
 	App            string
 	InitiatorFlows map[string]InitiatorFlowConfig
+	Assets         AllAssets
 }
 
 var models map[string]*model.ResourceMetadataModel
@@ -52,16 +61,16 @@ func NewGenerator(opts *Options) *Generator {
 }
 
 // NewOptions is the options constructor
-func NewOptions(flowModel string, version string, target, ns string) *Options {
-	return &Options{ModelFile: flowModel, CorDAppVersion: version, TargetDir: target, CordAppNamespace: ns}
+func NewOptions(cordappModel, version, target, ns, contractModelFile, depFile string) *Options {
+	return &Options{CorDAppModelFile: cordappModel, CorDAppVersion: version, TargetDir: target, CordAppNamespace: ns, ContractModelFile: contractModelFile, DependencyFile: depFile}
 }
 
 // Generate generates a CordAppfor the given options
 func (g *Generator) Generate() error {
 	logger.Println("Generating artifacts for corda client...")
 	data := DataState{}
-	if g.Opts.ModelFile != "" {
-		app, err := model.ParseApp(g.Opts.ModelFile)
+	if g.Opts.CorDAppModelFile != "" {
+		app, err := model.ParseApp(g.Opts.CorDAppModelFile)
 		if err != nil {
 			return fmt.Errorf("error parsing flow app json file, err %v", err)
 		}
@@ -69,6 +78,13 @@ func (g *Generator) Generate() error {
 		if err != nil {
 			return fmt.Errorf("prepareData err %v", err)
 		}
+
+		assets, err := getAllAssets(g.Opts.ContractModelFile)
+		if err != nil {
+			return fmt.Errorf("getAllAssets err %v", err)
+		}
+		assets.NS = g.Opts.CordAppNamespace
+		data.Assets = assets
 
 	} else {
 		data.App = "DovetailCordAppClient"
@@ -92,12 +108,24 @@ func (g *Generator) GenerateApp(data DataState) error {
 	wgutil.CreateDirIfNotExist(javaProject.GetAppDir(), "target/kotlin/classes")
 	webdir := wgutil.CreateDirIfNotExist(kotlindir, strings.Replace(g.Opts.CordAppNamespace, ".", "/", -1), "client/webserver")
 	cdir := wgutil.CreateDirIfNotExist(webdir, "controller")
+	servicedir := wgutil.CreateDirIfNotExist(webdir, "service")
 
 	//create custom controller file
 	if len(data.InitiatorFlows) > 0 {
 		err = createKotlinFile(cdir, data, "CustomController.template", fmt.Sprintf("%s%s", data.App, ".kt"))
 		if err != nil {
 			return fmt.Errorf("createKotlinFile CustomController.template err %v", err)
+		}
+	}
+
+	if g.Opts.ContractModelFile != "" {
+		err = createKotlinFile(servicedir, data.Assets, "eftl.template", "eftl.kt")
+		if err != nil {
+			return fmt.Errorf("createKotlinFile eftl.template err %v", err)
+		}
+		err = createKotlinFile(servicedir, data.Assets, "StatesTracker.template", "StatesTracker.kt")
+		if err != nil {
+			return fmt.Errorf("createKotlinFile StatesTracker.template err %v", err)
 		}
 	}
 	err = createKotlinFile(cdir, data, "ServerController.template", "ServerController.kt")
@@ -151,11 +179,11 @@ func (g *Generator) GenerateApp(data DataState) error {
 	}
 
 	pom := "kotlin.pom.xml"
-	if g.Opts.ModelFile == "" {
+	if g.Opts.CorDAppModelFile == "" {
 		pom = "kotlin.pom.generic.xml"
 	}
 
-	err = compileAndJar(javaProject.GetAppDir(), data.NS, data.App, g.Opts.CorDAppVersion, pom)
+	err = compileAndJar(javaProject.GetAppDir(), data.NS, data.App, g.Opts.CorDAppVersion, g.Opts.DependencyFile, pom)
 	if err != nil {
 		return err
 	}
@@ -191,14 +219,14 @@ func (g *Generator) GenerateApp(data DataState) error {
 	return nil
 }
 
-func compileAndJar(targetdir, ns, clazz, version string, pomf string) error {
+func compileAndJar(targetdir, ns, clazz, version, deppom, pomf string) error {
 	logger.Printf("Compile corda client artifacts")
 	pom, err := Asset("resources/" + pomf)
 	if err != nil {
 		return err
 	}
 
-	err = wgutil.CopyContent(pom, path.Join(targetdir, pomf))
+	err = wgutil.CreateNewPom(pom, targetdir, deppom, pomf)
 	if err != nil {
 		return err
 	}
@@ -277,4 +305,23 @@ func prepareData(opts *Options, app *app.Config) (data DataState, err error) {
 
 func ToLower(s string) string {
 	return strings.ToLower(s)
+}
+
+func getAllAssets(contractmodel string) (AllAssets, error) {
+	assetnames := AllAssets{Assets: make([]string, 0)}
+	app, err := model.ParseApp(contractmodel)
+	if err != nil {
+		return assetnames, err
+	}
+	assets := make(map[string]bool)
+	for _, t := range app.Triggers {
+		for _, h := range t.Handlers {
+			asset := h.Settings["assetname"].(string)
+			assets[asset] = true
+		}
+	}
+	for k := range assets {
+		assetnames.Assets = append(assetnames.Assets, k)
+	}
+	return assetnames, nil
 }

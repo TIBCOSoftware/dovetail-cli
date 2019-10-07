@@ -41,6 +41,7 @@
   		<artifactId>metrics-new-relic</artifactId>
   		<version>[1.0.5,)</version>
   	</dependency>
+     %%external%%
   </dependencies>
   <repositories>
     <repository>
@@ -110,7 +111,7 @@
                 <artifact>com.tibco.dovetail:*</artifact>
                 <excludes>
                  <exclude>com/tibco/dovetail/container/cordapp/**/*</exclude>
-                  <exclude>cordapp/**/*</exclude>
+                  <exclude>dovetail_cordapp/**/*</exclude>
                   <exclude>com/tibco/dovetail/corda/json/deserializer/**/*</exclude>
               </excludes>
               </filter>

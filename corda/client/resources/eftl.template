@@ -1,0 +1,66 @@
+package {{.NS}}.client.webserver.service
+
+import com.tibco.eftl.*
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
+import java.util.*
+import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
+import org.slf4j.LoggerFactory
+
+private const val EFTL_CLIENTID = "config.eftl.clientId"
+private const val EFTL_PASSWORD = "config.eftl.password"
+private const val EFTL_URL = "config.eftl.url"
+
+@Component
+open class TibcoMessaging (@Value("\${$EFTL_URL}") val url: String,@Value("\${$EFTL_PASSWORD}") val pwd: String, @Value("\${$EFTL_CLIENTID}")val clientid: String){
+    lateinit var connection:Connection
+    var logger = LoggerFactory.getLogger(TibcoMessaging::class.java)
+
+    @PostConstruct
+    fun connect() {
+        logger.info("connecting to Tibco EFTL")
+        val props = Properties()
+        props.setProperty(EFTL.PROPERTY_PASSWORD, pwd)
+        props.setProperty(EFTL.PROPERTY_CLIENT_ID, clientid)
+
+        val listener = object : ConnectionListener {
+
+            override fun onConnect(cnx: Connection ) {
+                logger.info("connected to Tibco EFTL")
+                connection = cnx
+            }
+
+            override fun onDisconnect(cnx:Connection , code:Int , reason:String ) {
+                System.out.printf("disconnected: %s\n", reason);
+            }
+
+            override  fun onReconnect(cnx:Connection ) {
+               connection = cnx
+            }
+
+            override fun onError(connection:Connection , icode:Int , reason:String) {
+                logger.error("error: %s\n", reason);
+            }
+        }
+
+        EFTL.connect(url, props, listener)
+    }
+
+    fun publish(message: Message){
+        connection!!.publish(message, object : CompletionListener {
+            override fun onCompletion(message: Message) {
+                System.out.printf("publish success\n")
+            }
+
+            override fun onError(message: Message, code: Int, reason: String) {
+                System.out.printf("publish error: %s\n", reason)
+            }
+        })
+    }
+
+    @PreDestroy
+    fun close(){
+        connection!!.disconnect()
+    }
+}

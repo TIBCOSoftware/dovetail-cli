@@ -72,10 +72,21 @@
         <version>[2.1.7.RELEASE,)</version>
     </dependency>
     <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+      <version>[2.9.5,)</version>
+   </dependency>
+   <dependency>
+      <groupId>com.tibco.eftl</groupId>
+      <artifactId>tibeftl</artifactId>
+      <version>[3.4.0,)</version>
+   </dependency>
+    <dependency>
 	    <groupId>com.github.jsqlparser</groupId>
 	    <artifactId>jsqlparser</artifactId>
 	    <version>2.1</version>
 	</dependency>
+     %%external%%
     <dependency>
         <groupId>${groupId}</groupId>
         <artifactId>${artifactId}</artifactId>

@@ -22,26 +22,30 @@ import (
 )
 
 var (
-	namespace  string
-	target     string
-	blockchain string
-	smversion  string
-	modelfile  string
+	namespace         string
+	target            string
+	blockchain        string
+	smversion         string
+	cordappmodelfile  string
+	contractmodelfile string
+	dependencypom     string
 )
 
 func init() {
 	ClientCmd.AddCommand(generateCmd)
 	generateCmd.PersistentFlags().StringP("target", "t", ".", "Destination path for generated artifacts, if a filename is given (With extension) the generated artifacts will compressed as a zip file with the file name provided")
-	generateCmd.Flags().StringP("namespace", "", "", "Corda only, CorDapp namespace, not required to generate generic client")
-	generateCmd.Flags().StringVarP(&modelfile, "model-file", "m", "", "DApp flow model file, not required to generate generic client")
+	generateCmd.Flags().StringP("namespace", "", "", "CorDapp namespace, not required to generate generic client")
+	generateCmd.Flags().StringVarP(&cordappmodelfile, "cordapp-json", "", "", "CorDApp flow json file, not required to generate generic client")
+	generateCmd.Flags().StringVarP(&contractmodelfile, "smartcontract-json", "", "", "Smart Contract flow json file, not required to generate generic client")
+	generateCmd.Flags().StringVarP(&dependencypom, "dependency-file", "", "", "pom snippet to include smart contract dependency")
 
 	generateCmd.MarkFlagRequired("target")
 }
 
 var generateCmd = &cobra.Command{
 	Use:   "generate",
-	Short: "Commands for generating dapp artifacts",
-	Long:  `Commands for generating dapp artifacts`,
+	Short: "Commands for generating client webserver artifacts",
+	Long:  `Commands for generating client webserver artifacts`,
 	Run: func(cmd *cobra.Command, args []string) {
 		blockchain, err := ClientCmd.PersistentFlags().GetString("blockchain")
 		if err != nil {
@@ -55,8 +59,14 @@ var generateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if modelfile != "" {
-			err = validateModelFile(modelfile)
+		if cordappmodelfile != "" {
+			err = validateModelFile(cordappmodelfile)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			err = validateModelFile(contractmodelfile)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
@@ -65,6 +75,10 @@ var generateCmd = &cobra.Command{
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
+			}
+
+			if dependencypom == "" {
+				fmt.Println("Must specify the dependency-file")
 			}
 		}
 
@@ -110,11 +124,11 @@ func GetGenerator(blockchain string) (contract.Generator, error) {
 }
 
 func createCordaClientGenerator() (contract.Generator, error) {
-	if modelfile != "" && namespace == "" {
+	if cordappmodelfile != "" && namespace == "" {
 		return nil, fmt.Errorf("namespace is required")
 	}
 
-	options := cordac.NewOptions(modelfile, smversion, target, namespace)
+	options := cordac.NewOptions(cordappmodelfile, smversion, target, namespace, contractmodelfile, dependencypom)
 	cordaGen := cordac.NewGenerator(options)
 	return cordaGen, nil
 }

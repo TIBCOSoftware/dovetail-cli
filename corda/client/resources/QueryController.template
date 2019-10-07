@@ -31,7 +31,7 @@ class QueryController(val rpc: NodeRPCConnection) {
     }
 
     @GetMapping(value = "/states", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
-    private fun allStates(@RequestParam stateClass: String? = null, @RequestHeader("Authorization") bearer: String) : Map<String, List<StateAndRef<ContractState>>>{
+    private fun allStates(@RequestParam(required=false) stateClass: String? = null, @RequestHeader("Authorization") bearer: String) : Map<String, List<StateAndRef<ContractState>>>{
         val cnx = AccessControl.getRpcProxy(rpc, bearer)
         if(stateClass == null)
             return mapOf("states" to cnx.vaultQueryBy<ContractState>().states)

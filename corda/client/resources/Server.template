@@ -8,6 +8,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 import net.corda.client.jackson.JacksonSupport
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 
 /**
  * Our Spring Boot application.
@@ -20,6 +24,11 @@ open class Server {
     @Bean
     open fun mappingJackson2HttpMessageConverter(@Autowired rpcConnection: NodeRPCConnection): MappingJackson2HttpMessageConverter {
         val mapper = JacksonSupport.createDefaultMapper(rpcConnection.proxy)
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        mapper.enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN)
+        mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+        mapper.enable(DeserializationFeature.USE_LONG_FOR_INTS)
+        mapper.registerModule(JavaTimeModule())
         val converter = MappingJackson2HttpMessageConverter()
         converter.objectMapper = mapper
         return converter

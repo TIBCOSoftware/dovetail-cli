@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/TIBCOSoftware/dovetail-cli/config"
-	cordac "github.com/TIBCOSoftware/dovetail-cli/corda/client"
 	corda "github.com/TIBCOSoftware/dovetail-cli/corda/cordapp"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
@@ -114,12 +113,15 @@ func GetGenerators(blockchain string) ([]contract.Generator, error) {
 		}
 
 		generators = append(generators, g)
-
-		gc, err := createCordaClientGenerator()
-		if err != nil {
-			return nil, err
-		}
-		generators = append(generators, gc)
+		/*
+			if !apiOnly {
+				gc, err := createCordaClientGenerator()
+				if err != nil {
+					return nil, err
+				}
+				generators = append(generators, gc)
+			}
+		*/
 		return generators, nil
 	default:
 		return nil, fmt.Errorf("Unsupported blockchain to create dapp '%s'", blockchain)
@@ -136,6 +138,7 @@ func createCordAppGenerator() (contract.Generator, error) {
 	return cordaGen, nil
 }
 
+/*
 func createCordaClientGenerator() (contract.Generator, error) {
 	if namespace == "" {
 		return nil, fmt.Errorf("namespace is required")
@@ -145,7 +148,7 @@ func createCordaClientGenerator() (contract.Generator, error) {
 	cordaGen := cordac.NewGenerator(options)
 	return cordaGen, nil
 }
-
+*/
 func validateModelFile(modelfile string) error {
 	appConfig, err := model.ParseApp(modelfile)
 	if err != nil {

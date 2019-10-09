@@ -13,8 +13,12 @@ depend-noforce:
 	@$(SCRIPTS_PATH)/dependencies.sh
 
 .PHONY: install
-install: depend-noforce
-	GO111MODULE=on go build -o $GOPATH/bin github.com/TIBCOSoftware/dovetail-cli/cmd/dovetail
+install:
+	go install github.com/TIBCOSoftware/dovetail-cli/cmd/dovetail
+
+.PHONY: build
+build:
+	go build github.com/TIBCOSoftware/dovetail-cli/cmd/dovetail
 
 .PHONY: buildtype
 buildtype: install

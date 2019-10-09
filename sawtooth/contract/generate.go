@@ -7,7 +7,7 @@
 // Package contract implements generate smart contract for hyperledger sawtooth
 package contract
 
-import (
+/*import (
 	"bufio"
 	"fmt"
 	"log"
@@ -79,20 +79,20 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
-	/*err = createCargoTomlFile(rustProject.GetTargetDir(), d.Opts.DovetailMacroPath, appConfig)
-	if err != nil {
-		return err
-	}*/
+	//err = createCargoTomlFile(rustProject.GetTargetDir(), d.Opts.DovetailMacroPath, appConfig)
+	//if err != nil {
+	//	return err
+	//}
 
-	/*err = createMainFile(rustProject.GetAppDir(), modelFileName, appConfig)
-	if err != nil {
-		return err
-	}*/
+	//err = createMainFile(rustProject.GetAppDir(), modelFileName, appConfig)
+	//if err != nil {
+	//	return err
+	//}
 
-	/*err = createLibFile(rustProject.GetAppDir(), modelFileName, appConfig)
-	if err != nil {
-		return err
-	}*/
+	//err = createLibFile(rustProject.GetAppDir(), modelFileName, appConfig)
+	//if err != nil {
+	//	return err
+	//}
 
 	logger.Println("Generating Ethereum smart contract... Done")
 	return nil
@@ -156,11 +156,11 @@ func getGitDependencies(appConfig *app.Config) ([]GitDependency, error) {
 func getDovetailGitDependencies(appConfig *app.Config) ([]GitDependency, error) {
 	dependencies := []GitDependency{}
 
-	/*// Get dovetail derive
-	dovetailDerive := GitDependency{ID: dovetailDeriveID, URL: dovetailDeriveURL}
+	// Get dovetail derive
+	//dovetailDerive := GitDependency{ID: dovetailDeriveID, URL: dovetailDeriveURL}
 
-	dependencies = append(dependencies, dovetailDerive)
-	*/
+	//dependencies = append(dependencies, dovetailDerive)
+
 	return dependencies, nil
 }
 
@@ -273,20 +273,20 @@ func createLibFile(appDir, modelFileName string, appConfig *app.Config) error {
 
 func getDoveInternalMainDependencies() ([]MainRs, error) {
 	rs := []MainRs{}
-	/*// Add dovetailDerive crate
-	dovetailDeriveCrates := map[string]struct{}{
-		dovetailDeriveID: {},
-	}
+	// Add dovetailDerive crate
+	//dovetailDeriveCrates := map[string]struct{}{
+	//	dovetailDeriveID: {},
+	//}
 	// Add dovetailDerive::app use
-	dovetailDeriveUses := map[string]struct{}{
-		fmt.Sprintf("%s::%s", dovetailDeriveID, "app"): {},
-	}
+	//dovetailDeriveUses := map[string]struct{}{
+	//	fmt.Sprintf("%s::%s", dovetailDeriveID, "app"): {},
+	//}
 	// Add dovetailDerive::app derive
-	dovetailDeriveDerives := map[string]struct{}{
-		"app": {},
-	}
-	dovetailDerive := MainRs{Crates: dovetailDeriveCrates, Uses: dovetailDeriveUses, Derives: dovetailDeriveDerives}
-	rs = append(rs, dovetailDerive)*/
+	//dovetailDeriveDerives := map[string]struct{}{
+	//	"app": {},
+	//}
+	//dovetailDerive := MainRs{Crates: dovetailDeriveCrates, Uses: dovetailDeriveUses, Derives: dovetailDeriveDerives}
+	//rs = append(rs, dovetailDerive)
 	return rs, nil
 }
 
@@ -379,16 +379,16 @@ func mergeLibRs(rsAs, rsBs []LibRs) LibRs {
 
 func getDoveInternalLibDependencies() ([]LibRs, error) {
 	rs := []LibRs{}
-	/*// Add dovetailDerive crate
-	dovetailDeriveCrates := map[string]struct{}{
-		dovetailDeriveID: {},
-	}
+	// Add dovetailDerive crate
+	//dovetailDeriveCrates := map[string]struct{}{
+	//	dovetailDeriveID: {},
+	//}
 	// Add dovetailDerive::app use
-	dovetailDeriveUses := map[string]struct{}{
-		fmt.Sprintf("%s::%s", dovetailDeriveID, "app"): {},
-	}
-	dovetailDerive := LibRs{Crates: dovetailDeriveCrates, Uses: dovetailDeriveUses}
-	rs = append(rs, dovetailDerive)*/
+	//dovetailDeriveUses := map[string]struct{}{
+	//	fmt.Sprintf("%s::%s", dovetailDeriveID, "app"): {},
+	//}
+	//dovetailDerive := LibRs{Crates: dovetailDeriveCrates, Uses: dovetailDeriveUses}
+	//rs = append(rs, dovetailDerive)
 	return rs, nil
 }
 
@@ -416,3 +416,4 @@ func getTriggerLibDependencies(appConfig *app.Config) ([]LibRs, error) {
 	}
 	return rs, nil
 }
+*/

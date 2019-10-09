@@ -12,20 +12,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
+	//"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
+	//"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/TIBCOSoftware/dovetail-cli/files"
-	"github.com/TIBCOSoftware/dovetail-cli/languages"
+	//"github.com/TIBCOSoftware/dovetail-cli/files"
+	//"github.com/TIBCOSoftware/dovetail-cli/languages"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
 	wgutil "github.com/TIBCOSoftware/dovetail-cli/util"
+	"github.com/project-flogo/cli/api"
 	"github.com/project-flogo/core/app"
 	"github.com/project-flogo/flow/definition"
 )
@@ -78,7 +79,12 @@ func (d *Generator) Generate() error {
 		return err
 	}
 
-	goProject := languages.NewGo(d.Opts.TargetDir, appConfig.Name)
+	// Create project
+	appProject, err := api.CreateProject(d.Opts.TargetDir, appConfig.Name, d.Opts.ModelFile, "")
+	if err != nil {
+		return err
+	}
+	/*goProject := languages.NewGo(d.Opts.TargetDir, appConfig.Name)
 
 	err = goProject.Init()
 	if err != nil {
@@ -132,9 +138,10 @@ func (d *Generator) Generate() error {
 			return err
 		}
 	}
+	*/
 
 	logger.Println("Generating Hyperledger Fabric smart contract... Done")
-	logger.Printf("Generated artifacts: '%s'\n", goProject.GetInputTargetDir())
+	logger.Printf("Generated artifacts: '%s'\n", appProject.Dir())
 	return nil
 }
 
@@ -176,7 +183,7 @@ func vendorFiles(target, srcdir string) error {
 	return nil
 }
 
-func createFunctionImportFile(ccName, targetdir, modelFile string) error {
+/*func createFunctionImportFile(ccName, targetdir, modelFile string) error {
 	content, err := ioutil.ReadFile(modelFile)
 	if err != nil {
 		return err
@@ -222,7 +229,7 @@ func createFunctionImportFile(ccName, targetdir, modelFile string) error {
 	writer.Flush()
 
 	return nil
-}
+}*/
 func createResourceBundle(ccName, targetdir string, activities, triggers map[string]ResourceRef) error {
 	files := make([]string, 0)
 	files = append(files, path.Join(targetdir, ccName+".json"))
@@ -349,52 +356,4 @@ func getAppResources(appConfig *app.Config) (activities, triggers map[string]Res
 		}
 	}
 	return activities, triggers, nil
-}
-
-var functions map[string]string
-
-func init() {
-	//TODO: how to support built-in and user defined functions
-	/*
-		functions = make(map[string]string)
-		functions["array.contains"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/array/contains"
-		functions["array.create"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/array/create"
-		functions["array.forEach"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/array/forEach"
-		functions["boolean.false"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/boolean/false"
-		functions["boolean.not"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/boolean/not"
-		functions["boolean.true"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/boolean/true"
-		functions["datetime.currentDate"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/datetime/currentDate"
-		functions["datetime.currentDatetime"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/datetime/currentDatetime"
-		functions["datetime.currentTime"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/datetime/currentTime"
-		functions["datetime.formatDate"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/datetime/formatDate"
-		functions["datetime.formatDatetime"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/datetime/formatDatetime"
-		functions["datetime.formatTime"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/datetime/formatTime"
-		functions["datetime.now"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/datetime/now"
-		functions["number.int64"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/number/int64"
-		functions["number.len"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/number/len"
-		functions["string.base64ToString"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/base64ToString"
-		functions["string.concat"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/concat"
-		functions["string.contains"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/contains"
-		functions["string.dateFormat"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/dateFormat"
-		functions["string.datetimeFormat"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/datetimeFormat"
-		functions["string.endsWith"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/endsWith"
-		functions["string.equals"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/equals"
-		functions["string.equalsignorecase"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/equalsignorecase"
-		functions["string.index"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/index"
-		functions["string.lastIndex"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/lastIndex"
-		functions["string.length"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/length"
-		functions["string.lowerCase"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/lowerCase"
-		functions["string.regex"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/regex"
-		functions["string.split"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/split"
-		functions["string.startsWith"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/startsWith"
-		functions["string.stringToBase64"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/stringToBase64"
-		functions["string.substring"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/substring"
-		functions["string.substringAfter"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/substringAfter"
-		functions["string.substringBefore"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/substringBefore"
-		functions["string.timeFormat"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/timeFormat"
-		functions["string.tostring"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/tostring"
-		functions["string.trim"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/trim"
-		functions["string.upperCase"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/string/upperCase"
-		functions["string.renderJSON"] = "github.com/TIBCOSoftware/flogo-lib/core/mapper/exprmapper/function/utility/renderJSON"
-	*/
 }

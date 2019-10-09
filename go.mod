@@ -5,8 +5,6 @@ require (
 	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
 	github.com/Shopify/sarama v1.19.0 // indirect
 	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
-	github.com/TIBCOSoftware/flogo-contrib v0.5.7
-	github.com/TIBCOSoftware/flogo-lib v0.5.7
 	github.com/cactus/go-statsd-client/statsd v0.0.0-20190501063751-9a7692639588 // indirect
 	github.com/cloudflare/cfssl v0.0.0-20181102015659-ea4033a214e7 // indirect
 	github.com/eapache/go-resiliency v1.1.0 // indirect
@@ -31,6 +29,7 @@ require (
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7 // indirect
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/project-flogo/cli v0.9.0
 	github.com/project-flogo/core v0.9.2
 	github.com/project-flogo/flow v0.9.3
 	github.com/prometheus/client_golang v1.0.0 // indirect

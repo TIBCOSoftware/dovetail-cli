@@ -11,9 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/TIBCOSoftware/dovetail-cli/config"
 	cordac "github.com/TIBCOSoftware/dovetail-cli/corda/client"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
@@ -24,8 +22,7 @@ import (
 var (
 	namespace         string
 	target            string
-	blockchain        string
-	smversion         string
+	caversion         string
 	cordappmodelfile  string
 	contractmodelfile string
 	dependencypom     string
@@ -34,7 +31,7 @@ var (
 func init() {
 	ClientCmd.AddCommand(generateCmd)
 	generateCmd.PersistentFlags().StringP("target", "t", ".", "Destination path for generated artifacts, if a filename is given (With extension) the generated artifacts will compressed as a zip file with the file name provided")
-	generateCmd.Flags().StringP("namespace", "", "", "CorDapp namespace, not required to generate generic client")
+	generateCmd.Flags().StringVarP(&namespace, "cordapp-ns", "", "", "CorDapp namespace, not required to generate generic client")
 	generateCmd.Flags().StringVarP(&cordappmodelfile, "cordapp-json", "", "", "CorDApp flow json file, not required to generate generic client")
 	generateCmd.Flags().StringVarP(&contractmodelfile, "smartcontract-json", "", "", "Smart Contract flow json file, not required to generate generic client")
 	generateCmd.Flags().StringVarP(&dependencypom, "dependency-file", "", "", "pom snippet to include smart contract dependency")
@@ -47,17 +44,13 @@ var generateCmd = &cobra.Command{
 	Short: "Commands for generating client webserver artifacts",
 	Long:  `Commands for generating client webserver artifacts`,
 	Run: func(cmd *cobra.Command, args []string) {
-		blockchain, err := ClientCmd.PersistentFlags().GetString("blockchain")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 
-		smversion, err = ClientCmd.PersistentFlags().GetString("version")
+		smversion, err := ClientCmd.PersistentFlags().GetString("version")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		caversion = smversion
 
 		if cordappmodelfile != "" {
 			err = validateModelFile(cordappmodelfile)
@@ -71,9 +64,8 @@ var generateCmd = &cobra.Command{
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			namespace, err = cmd.Flags().GetString("namespace")
-			if err != nil {
-				fmt.Println(err)
+			if namespace == "" {
+				fmt.Println("namespace is required")
 				os.Exit(1)
 			}
 
@@ -88,15 +80,16 @@ var generateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		if target == "" {
-			target = "./dovetail_generated"
+			target = "./target"
 		}
+
 		target, err = filepath.Abs(target)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		generator, err := GetGenerator(blockchain)
+		generator, err := createCordaClientGenerator()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -109,26 +102,12 @@ var generateCmd = &cobra.Command{
 	},
 }
 
-// GetGenerator chooses the right generator
-func GetGenerator(blockchain string) (contract.Generator, error) {
-	switch strings.ToUpper(blockchain) {
-	case strings.ToUpper(config.CORDA):
-		gc, err := createCordaClientGenerator()
-		if err != nil {
-			return nil, err
-		}
-		return gc, nil
-	default:
-		return nil, fmt.Errorf("Unsupported blockchain to create client '%s'", blockchain)
-	}
-}
-
 func createCordaClientGenerator() (contract.Generator, error) {
 	if cordappmodelfile != "" && namespace == "" {
 		return nil, fmt.Errorf("namespace is required")
 	}
 
-	options := cordac.NewOptions(cordappmodelfile, smversion, target, namespace, contractmodelfile, dependencypom)
+	options := cordac.NewOptions(cordappmodelfile, caversion, target, namespace, contractmodelfile, dependencypom)
 	cordaGen := cordac.NewGenerator(options)
 	return cordaGen, nil
 }

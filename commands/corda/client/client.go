@@ -8,16 +8,11 @@
 package client
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/TIBCOSoftware/dovetail-cli/config"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	ClientCmd.PersistentFlags().StringP("blockchain", "b", config.CORDA, fmt.Sprintf("Target blockchain to deploy to (%s)", strings.Join(config.Blockchains(), "|")))
-	ClientCmd.PersistentFlags().StringP("version", "v", "v1.0.0", "client version")
+	ClientCmd.PersistentFlags().StringP("version", "v", "v1.0.0", "version for generic client. for CorDApp client, the version should match the CorDapp version")
 }
 
 // ClientCmd is the command for client app

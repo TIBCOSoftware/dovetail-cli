@@ -106,6 +106,14 @@
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
+      <id>corda</id>
+      <name>corda Repository</name>
+      <url>https://ci-artifactory.corda.r3cev.com/artifactory/corda-releases</url>
+    </repository>
+     <repository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
       <id>spring</id>
       <name>spring plugin Repository</name>
       <url> http://repo.spring.io/plugins-release/</url>

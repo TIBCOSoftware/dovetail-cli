@@ -8,16 +8,11 @@
 package contract
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/TIBCOSoftware/dovetail-cli/config"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	ContractCmd.PersistentFlags().StringP("blockchain", "b", config.HYPERLEDGER_FABRIC, fmt.Sprintf("Target blockchain to deploy to (%s)", strings.Join(config.Blockchains(), "|")))
-	ContractCmd.PersistentFlags().StringP("version", "v", "v1.0.0", "Smart contract version")
+	ContractCmd.PersistentFlags().StringP("version", "v", "v1.0.0", "fabric Chaincode version")
 }
 
 // ContractCmd is the command for smart contracts

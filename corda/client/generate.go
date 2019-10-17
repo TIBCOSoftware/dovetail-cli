@@ -61,8 +61,8 @@ func NewGenerator(opts *Options) *Generator {
 }
 
 // NewOptions is the options constructor
-func NewOptions(cordappModel, version, target, ns, contractModelFile, depFile string) *Options {
-	return &Options{CorDAppModelFile: cordappModel, CorDAppVersion: version, TargetDir: target, CordAppNamespace: ns, ContractModelFile: contractModelFile, DependencyFile: depFile}
+func NewOptions(cordappModel, cordappversion, target, ns, contractModelFile, depFile string) *Options {
+	return &Options{CorDAppModelFile: cordappModel, CorDAppVersion: cordappversion, TargetDir: target, CordAppNamespace: ns, ContractModelFile: contractModelFile, DependencyFile: depFile}
 }
 
 // Generate generates a CordAppfor the given options
@@ -183,7 +183,7 @@ func (g *Generator) GenerateApp(data DataState) error {
 		pom = "kotlin.pom.generic.xml"
 	}
 
-	err = compileAndJar(javaProject.GetAppDir(), data.NS, data.App, g.Opts.CorDAppVersion, g.Opts.DependencyFile, pom)
+	err = compileAndJar(javaProject.GetAppDir(), data.NS, data.App, g.Opts, pom)
 	if err != nil {
 		return err
 	}
@@ -219,19 +219,19 @@ func (g *Generator) GenerateApp(data DataState) error {
 	return nil
 }
 
-func compileAndJar(targetdir, ns, clazz, version, deppom, pomf string) error {
+func compileAndJar(targetdir, ns, clazz string, opts *Options, pomf string) error {
 	logger.Printf("Compile corda client artifacts")
 	pom, err := Asset("resources/" + pomf)
 	if err != nil {
 		return err
 	}
 
-	err = wgutil.CreateNewPom(pom, targetdir, deppom, pomf)
+	err = wgutil.CreateNewPom(pom, targetdir, opts.DependencyFile, pomf)
 	if err != nil {
 		return err
 	}
 
-	err = wgutil.MvnPackage(ns, clazz, version, pomf, targetdir)
+	err = wgutil.MvnPackage(ns, clazz, opts.CorDAppVersion, pomf, targetdir)
 	if err != nil {
 		return err
 	}

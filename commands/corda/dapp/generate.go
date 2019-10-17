@@ -25,7 +25,7 @@ var (
 	namespace  string
 	target     string
 	blockchain string
-	smversion  string
+	caversion  string
 	modelfile  string
 	pom        string
 	apiOnly    bool
@@ -34,8 +34,8 @@ var (
 func init() {
 	DAppCmd.AddCommand(generateCmd)
 	generateCmd.PersistentFlags().StringP("target", "t", ".", "Destination path for generated artifacts, if a filename is given (With extension) the generated artifacts will compressed as a zip file with the file name provided")
-	generateCmd.Flags().StringP("namespace", "", "", "Corda only, required")
-	generateCmd.Flags().StringVarP(&modelfile, "model-file", "m", "", "DApp flow model file")
+	generateCmd.Flags().StringP("namespace", "", "", "Required, namespace of the dapp")
+	generateCmd.Flags().StringVarP(&modelfile, "modelfile", "m", "", "DApp flow model file")
 	generateCmd.Flags().StringVarP(&pom, "dependency-file", "", "", "dependency xml file")
 	generateCmd.Flags().BoolVarP(&apiOnly, "api", "", false, "Corda only, generate API artifacts only")
 
@@ -49,17 +49,13 @@ var generateCmd = &cobra.Command{
 	Short: "Commands for generating dapp artifacts",
 	Long:  `Commands for generating dapp artifacts`,
 	Run: func(cmd *cobra.Command, args []string) {
-		blockchain, err := DAppCmd.PersistentFlags().GetString("blockchain")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 
-		smversion, err = DAppCmd.PersistentFlags().GetString("version")
+		smversion, err := DAppCmd.PersistentFlags().GetString("version")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		caversion = smversion
 
 		err = validateModelFile(modelfile)
 		if err != nil {
@@ -79,7 +75,7 @@ var generateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		if target == "" {
-			target = "./dovetail_generated"
+			target = "./target"
 		}
 		target, err = filepath.Abs(target)
 		if err != nil {
@@ -87,22 +83,21 @@ var generateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		generators, err := GetGenerators(blockchain)
+		g, err := createCordAppGenerator()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		for _, generator := range generators {
-			if err := generator.Generate(); err != nil {
-				fmt.Printf("Error generating the contract: '%s'", err)
-				os.Exit(1)
-			}
+		if err := g.Generate(); err != nil {
+			fmt.Printf("Error generating the contract: '%s'", err)
+			os.Exit(1)
 		}
+
 	},
 }
 
-// GetGenerator chooses the right generator
+//GetGenerators chooses the right generator
 func GetGenerators(blockchain string) ([]contract.Generator, error) {
 	generators := make([]contract.Generator, 0)
 	switch strings.ToUpper(blockchain) {
@@ -133,7 +128,7 @@ func createCordAppGenerator() (contract.Generator, error) {
 		return nil, fmt.Errorf("namespace is required")
 	}
 
-	options := corda.NewOptions(modelfile, smversion, target, namespace, pom, apiOnly)
+	options := corda.NewOptions(modelfile, caversion, target, namespace, pom, apiOnly)
 	cordaGen := corda.NewGenerator(options)
 	return cordaGen, nil
 }
@@ -144,7 +139,7 @@ func createCordaClientGenerator() (contract.Generator, error) {
 		return nil, fmt.Errorf("namespace is required")
 	}
 
-	options := cordac.NewOptions(modelfile, smversion, target, namespace)
+	options := cordac.NewOptions(modelfile, caversion, target, namespace)
 	cordaGen := cordac.NewGenerator(options)
 	return cordaGen, nil
 }

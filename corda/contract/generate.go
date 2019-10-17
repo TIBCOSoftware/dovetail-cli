@@ -36,11 +36,11 @@ type Generator struct {
 type Options struct {
 	ModelFile string
 	Version   string
-	State     string
-	Commands  []string
 	TargetDir string
 	Namespace string
 	Pom       string
+	State     string
+	Commands  []string
 }
 
 type DataState struct {
@@ -90,8 +90,8 @@ func NewGenerator(opts *Options) contract.Generator {
 }
 
 // NewOptions is the options constructor
-func NewOptions(flowModel string, version string, state string, commands []string, target, ns string, pom string) *Options {
-	return &Options{ModelFile: flowModel, Version: version, State: state, Commands: commands, TargetDir: target, Namespace: ns, Pom: pom}
+func NewOptions(flowModel string, version string, target, ns string, pom string) *Options {
+	return &Options{ModelFile: flowModel, Version: version, TargetDir: target, Namespace: ns, Pom: pom}
 }
 
 // Generate generates a smart contract for the given options

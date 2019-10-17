@@ -27,8 +27,8 @@ var (
 )
 
 func init() {
-	ContractCmd.AddCommand(deployCmd)
-	ContractCmd.AddCommand(instantiateCmd)
+	//ContractCmd.AddCommand(deployCmd)
+	//ContractCmd.AddCommand(instantiateCmd)
 
 	deployCmd.Flags().StringVar(&id, "id", "", "Id of the Chaincode")
 	deployCmd.Flags().StringVar(&path, "path", "", "Source folder of the generated Chaincode, e.g., /path/to/hlf/src/myapp")

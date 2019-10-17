@@ -12,13 +12,13 @@ import (
 	"os"
 
 	"github.com/TIBCOSoftware/dovetail-cli/commands/corda"
-	//"github.com/TIBCOSoftware/dovetail-cli/commands/fabric"
+	"github.com/TIBCOSoftware/dovetail-cli/commands/fabric"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	RootCmd.AddCommand(versionCmd)
-	//RootCmd.AddCommand(fabric.FabricCmd)
+	RootCmd.AddCommand(fabric.FabricCmd)
 	RootCmd.AddCommand(corda.CordaCmd)
 }
 

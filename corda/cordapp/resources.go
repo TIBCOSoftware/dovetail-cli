@@ -168,7 +168,7 @@ func resourcesKotlinPomXml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "resources/kotlin.pom.xml", size: 4453, mode: os.FileMode(420), modTime: time.Unix(1571332352, 0)}
+	info := bindataFileInfo{name: "resources/kotlin.pom.xml", size: 4453, mode: os.FileMode(420), modTime: time.Unix(1571677568, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

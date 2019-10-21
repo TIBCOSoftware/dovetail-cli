@@ -35,6 +35,7 @@ type Options struct {
 	CordAppNamespace  string
 	ContractModelFile string
 	DependencyFile    string
+	Streaming         string
 }
 
 type InitiatorFlowConfig struct {
@@ -61,8 +62,8 @@ func NewGenerator(opts *Options) *Generator {
 }
 
 // NewOptions is the options constructor
-func NewOptions(cordappModel, cordappversion, target, ns, contractModelFile, depFile string) *Options {
-	return &Options{CorDAppModelFile: cordappModel, CorDAppVersion: cordappversion, TargetDir: target, CordAppNamespace: ns, ContractModelFile: contractModelFile, DependencyFile: depFile}
+func NewOptions(cordappModel, cordappversion, target, ns, contractModelFile, depFile, msgservice string) *Options {
+	return &Options{CorDAppModelFile: cordappModel, CorDAppVersion: cordappversion, TargetDir: target, CordAppNamespace: ns, ContractModelFile: contractModelFile, DependencyFile: depFile, Streaming: msgservice}
 }
 
 // Generate generates a CordAppfor the given options
@@ -118,7 +119,7 @@ func (g *Generator) GenerateApp(data DataState) error {
 		}
 	}
 
-	if g.Opts.ContractModelFile != "" {
+	if g.Opts.ContractModelFile != "" && g.Opts.Streaming == "eftl" {
 		err = createKotlinFile(servicedir, data.Assets, "eftl.template", "eftl.kt")
 		if err != nil {
 			return fmt.Errorf("createKotlinFile eftl.template err %v", err)

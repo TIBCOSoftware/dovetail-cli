@@ -26,6 +26,7 @@ var (
 	cordappmodelfile  string
 	contractmodelfile string
 	dependencypom     string
+	streaming         string
 )
 
 func init() {
@@ -35,6 +36,7 @@ func init() {
 	generateCmd.Flags().StringVarP(&cordappmodelfile, "cordapp-json", "", "", "CorDApp flow json file, not required to generate generic client")
 	generateCmd.Flags().StringVarP(&contractmodelfile, "smartcontract-json", "", "", "Smart Contract flow json file, not required to generate generic client")
 	generateCmd.Flags().StringVarP(&dependencypom, "dependency-file", "", "", "pom snippet to include smart contract dependency")
+	generateCmd.Flags().StringVarP(&streaming, "streaming", "", "none", "publish vault changes to messaging service, none or eftl")
 
 	generateCmd.MarkFlagRequired("target")
 }
@@ -107,7 +109,7 @@ func createCordaClientGenerator() (contract.Generator, error) {
 		return nil, fmt.Errorf("namespace is required")
 	}
 
-	options := cordac.NewOptions(cordappmodelfile, caversion, target, namespace, contractmodelfile, dependencypom)
+	options := cordac.NewOptions(cordappmodelfile, caversion, target, namespace, contractmodelfile, dependencypom, streaming)
 	cordaGen := cordac.NewGenerator(options)
 	return cordaGen, nil
 }

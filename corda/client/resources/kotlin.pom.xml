@@ -34,7 +34,7 @@
   	<dependency>
   		<groupId>com.tibco.dovetail</groupId>
   		<artifactId>dovetail-corda</artifactId>
-  		<version>[0.1.4, )</version>
+  		<version>0.2.1-SNAPSHOT</version>
   	</dependency>
     <dependency>
   		<groupId>net.corda</groupId>
@@ -71,6 +71,11 @@
         <artifactId>spring-boot-starter-web</artifactId>
         <version>[2.1.7.RELEASE,)</version>
     </dependency>
+     <dependency>
+    <groupId>commons-lang</groupId>
+    <artifactId>commons-lang</artifactId>
+    <version>[2.6, )</version>
+  </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>

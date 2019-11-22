@@ -4,9 +4,9 @@ import com.tibco.dovetail.core.runtime.compilers.AppCompiler
 import com.tibco.dovetail.core.runtime.compilers.App
 import com.tibco.dovetail.core.runtime.trigger.ITrigger
 
-object {{.ContractClass}}Impl {
+object {{.AppName}}Impl {
 
-    val app = AppCompiler.compileApp({{.ContractClass}}Impl::class.java.getResourceAsStream("transactions.json"))
+    val app = AppCompiler.compileApp({{.AppName}}Impl::class.java.getResourceAsStream("transactions.json"))
     fun getTrigger(name: String): ITrigger? {
         return app.getTriggers()!![name]
     }

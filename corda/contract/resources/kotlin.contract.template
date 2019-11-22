@@ -39,6 +39,6 @@ public class {{.ContractClass}} : CordaFlowContract(), Contract {
     }
 
      override fun getTrigger(name: String):ITrigger? {
-        return {{.ContractClass}}Impl.getTrigger(name)
+        return {{.AppClass}}Impl.getTrigger(name)
     }
 }

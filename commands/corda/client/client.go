@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	ClientCmd.PersistentFlags().StringP("version", "v", "v1.0.0", "client version")
+	ClientCmd.PersistentFlags().StringP("version", "v", "v1.0.0", "version for generic client. for CorDApp client, the version should match the CorDapp version")
 }
 
 // ClientCmd is the command for client app

@@ -1,0 +1,72 @@
+package {{.NS}}.client.webserver.service
+
+import {{.NS}}.client.webserver.NodeRPCConnection
+import com.tibco.eftl.Message
+
+import net.corda.core.contracts.ContractState
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
+
+import org.springframework.stereotype.Component
+import net.corda.core.node.services.Vault
+import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
+import java.util.HashSet
+import org.slf4j.LoggerFactory
+
+@Component
+class StatesTracker(@Autowired val rpc: NodeRPCConnection, @Autowired val converter: MappingJackson2HttpMessageConverter, @Autowired val eftl: TibcoMessaging){
+
+   val t = Thread(StateTracker(rpc, converter, eftl))
+    var logger = LoggerFactory.getLogger(StatesTracker::class.java) 
+    @EventListener(ApplicationReadyEvent::class)
+    fun onReady(){
+        if(!t.isAlive){
+            logger.info("started states change listener...")
+            t.start()
+        }
+    }
+
+    fun close() {
+       if(t.isAlive)
+           t.interrupt()
+    }
+}
+
+class StateTracker(val rpc: NodeRPCConnection, val converter: MappingJackson2HttpMessageConverter, val eftl: TibcoMessaging):Runnable{
+    var logger = LoggerFactory.getLogger(StatesTracker::class.java)
+    override fun run() {
+        try {
+
+            val contractStateTypes = HashSet<Class<out ContractState>>()
+            {{range $i, $asset := .Assets }}
+            contractStateTypes.add({{$asset}}::class.java)
+            {{end}}
+
+            val criteria = VaultQueryCriteria(Vault.StateStatus.UNCONSUMED, contractStateTypes)
+
+            val (snapshot, update) = rpc.proxy.vaultTrackByCriteria(ContractState::class.java, criteria)
+
+            update.subscribe { update ->
+                if (update.produced.size > 0)
+                    update.produced.forEach {
+                        logger.info("publish state change to " + it.state.data.javaClass.canonicalName)
+                        publish(converter.objectMapper.writeValueAsString(it.state.data), it.state.data.javaClass.canonicalName)
+
+                    }
+            }
+
+        }catch (e: InterruptedException){
+
+        }
+    }
+
+    fun publish(msg: String, dest: String){
+        val message = eftl.connection!!.createMessage();
+        message.setString(Message.FIELD_NAME_DESTINATION, dest)
+        message.setString("message", msg)
+
+        eftl.connection!!.publish(message, null);
+    }
+}

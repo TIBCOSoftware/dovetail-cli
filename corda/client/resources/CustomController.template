@@ -29,7 +29,7 @@ class MainController(val rpc: NodeRPCConnection) {
     }
 
 {{range $flow, $config := .InitiatorFlows }}
-    @PostMapping(value = "{{$flow | ToLower }}", produces = arrayOf("MediaType.APPLICATION_JSON_VALUE"))
+    @PostMapping(value = "{{$flow | ToLower }}", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
     fun {{$flow}}(@RequestBody input: {{$flow}}Input, @RequestHeader("Authorization") bearer: String): ResponseEntity<Map<String, String>> {
         return try {
             val cnx = AccessControl.getRpcProxy(rpc, bearer)

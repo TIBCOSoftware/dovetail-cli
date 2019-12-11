@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 )
 
 func CreateDirIfNotExist(subdir ...string) string {
@@ -46,6 +47,25 @@ func CreateTargetDirs(targetPath string) string {
 	return target
 }
 
+func CreateNewPom(oldpom []byte, targetdir, externalDepFile, newpomFileName string) error {
+	dep := ""
+	fmt.Printf("dep=%s, target=%s, pom=%s\n", externalDepFile, targetdir, newpomFileName)
+	if externalDepFile != "" {
+		deppom, err := ioutil.ReadFile(externalDepFile)
+		if err != nil {
+			return err
+		}
+
+		dep = string(deppom)
+	}
+	newpom := strings.Replace(string(oldpom), "%%external%%", dep, 1)
+
+	err := CopyContent([]byte(newpom), path.Join(targetdir, newpomFileName))
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func MvnPackage(groupId, artifactId, version, pomf, targetdir string) error {
 	logger := log.New(os.Stdout, "", log.LstdFlags)
 	args := []string{"package", "-f", path.Join(targetdir, pomf), "-DbaseDir=" + targetdir, "-Dversion=" + version, "-DgroupId=" + groupId, "-DartifactId=" + artifactId}

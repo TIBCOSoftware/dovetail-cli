@@ -1,11 +1,24 @@
 package contract
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 )
 
-func TestParser(t *testing.T) {
+func TestDovetailParser(t *testing.T) {
+
+	wdir, _ := filepath.Abs("/Users/mwenyan@tibco.com/Downloads/tmp")
+	//	opts := NewOptions("/Users/mwenyan@tibco.com/Downloads/CommercialPaperContract.json", "1.0.0", "", nil, wdir, "com.example.cp.tutorial", "")
+	opts := NewOptions("/Users/mwenyan@tibco.com/Downloads/IOUDemo2.json", "2.0.0", "", nil, wdir, "com.example.iou", "")
+	generator := NewGenerator(opts)
+
+	err := generator.Generate()
+	if err != nil {
+		fmt.Printf("err=%v", err)
+	}
+}
+func testComposerParser(t *testing.T) {
 	jsonstring := `{
 		"name": "myapp",
 		"description": " ",
@@ -75,8 +88,8 @@ func TestParser(t *testing.T) {
 	txns[1] = "com.tibco.cp.TransferIOU"
 	txns[2] = "com.tibco.cp.SettleIOU"
 
-	wdir, _ := filepath.Abs("./")
-	opts := NewOptions(jsonstring, "1.0.0", "com.tibco.cp.IOU", txns, wdir, "com.tibco.cp")
+	wdir, _ := filepath.Abs("/Users/mwenyan@tibco.com/Downloads/tmp")
+	opts := NewOptions(jsonstring, "1.0.0", "com.tibco.cp.IOU", txns, wdir, "com.tibco.cp", "")
 	generator := NewGenerator(opts)
 
 	generator.Generate()

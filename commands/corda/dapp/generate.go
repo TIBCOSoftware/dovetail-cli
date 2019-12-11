@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/TIBCOSoftware/dovetail-cli/config"
-	cordac "github.com/TIBCOSoftware/dovetail-cli/corda/client"
 	corda "github.com/TIBCOSoftware/dovetail-cli/corda/cordapp"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
 	"github.com/TIBCOSoftware/dovetail-cli/pkg/contract"
@@ -37,7 +36,7 @@ func init() {
 	generateCmd.PersistentFlags().StringP("target", "t", ".", "Destination path for generated artifacts, if a filename is given (With extension) the generated artifacts will compressed as a zip file with the file name provided")
 	generateCmd.Flags().StringP("namespace", "", "", "Required, namespace of the dapp")
 	generateCmd.Flags().StringVarP(&modelfile, "modelfile", "m", "", "DApp flow model file")
-	generateCmd.Flags().StringVarP(&pom, "dependencyfile", "", "", "dependency xml file")
+	generateCmd.Flags().StringVarP(&pom, "dependency-file", "", "", "dependency xml file")
 	generateCmd.Flags().BoolVarP(&apiOnly, "api", "", false, "Corda only, generate API artifacts only")
 
 	generateCmd.MarkFlagRequired("target")
@@ -84,28 +83,17 @@ var generateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		generators := make([]contract.Generator, 0)
 		g, err := createCordAppGenerator()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		generators = append(generators, g)
-
-		gc, err := createCordaClientGenerator()
-		if err != nil {
-			fmt.Println(err)
+		if err := g.Generate(); err != nil {
+			fmt.Printf("Error generating the contract: '%s'", err)
 			os.Exit(1)
 		}
-		generators = append(generators, gc)
 
-		for _, generator := range generators {
-			if err := generator.Generate(); err != nil {
-				fmt.Printf("Error generating the contract: '%s'", err)
-				os.Exit(1)
-			}
-		}
 	},
 }
 
@@ -120,12 +108,15 @@ func GetGenerators(blockchain string) ([]contract.Generator, error) {
 		}
 
 		generators = append(generators, g)
-
-		gc, err := createCordaClientGenerator()
-		if err != nil {
-			return nil, err
-		}
-		generators = append(generators, gc)
+		/*
+			if !apiOnly {
+				gc, err := createCordaClientGenerator()
+				if err != nil {
+					return nil, err
+				}
+				generators = append(generators, gc)
+			}
+		*/
 		return generators, nil
 	default:
 		return nil, fmt.Errorf("Unsupported blockchain to create dapp '%s'", blockchain)
@@ -142,6 +133,7 @@ func createCordAppGenerator() (contract.Generator, error) {
 	return cordaGen, nil
 }
 
+/*
 func createCordaClientGenerator() (contract.Generator, error) {
 	if namespace == "" {
 		return nil, fmt.Errorf("namespace is required")
@@ -151,7 +143,7 @@ func createCordaClientGenerator() (contract.Generator, error) {
 	cordaGen := cordac.NewGenerator(options)
 	return cordaGen, nil
 }
-
+*/
 func validateModelFile(modelfile string) error {
 	appConfig, err := model.ParseApp(modelfile)
 	if err != nil {

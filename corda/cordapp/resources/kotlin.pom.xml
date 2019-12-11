@@ -24,17 +24,18 @@
   	<dependency>
   		<groupId>net.corda</groupId>
   		<artifactId>corda-core</artifactId>
-  		<version>[4.0,)</version>
+  		<version>4.1</version>
+  		<scope>provided</scope>
   	</dependency>
   	<dependency>
   		<groupId>net.corda</groupId>
-  		<artifactId>corda-finance</artifactId>
-  		<version>[2.0.0,)</version>
+  		<artifactId>corda-finance-contracts</artifactId>
+  		<version>4.1</version>
   	</dependency>
   	<dependency>
   		<groupId>com.tibco.dovetail</groupId>
   		<artifactId>dovetail-corda</artifactId>
-  		<version>[0.1.4, )</version>
+  		<version>0.2.1-SNAPSHOT</version>
   	</dependency>
     <dependency>
   		<groupId>com.palominolabs.metrics</groupId>
@@ -51,6 +52,14 @@
       <id>central</id>
       <name>Central Repository</name>
       <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+     <repository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>corda</id>
+      <name>corda Repository</name>
+      <url>https://ci-artifactory.corda.r3cev.com/artifactory/corda-releases</url>
     </repository>
      <repository>
       <snapshots>

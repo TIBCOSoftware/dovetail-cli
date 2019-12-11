@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	corda "github.com/TIBCOSoftware/dovetail-cli/corda/contract"
 	"github.com/TIBCOSoftware/dovetail-cli/model"
@@ -20,21 +19,19 @@ import (
 )
 
 var (
-	cordaState    string
-	cordaCommands string
-	cordaNS       string
-	target        string
-	cversion      string
-	modelfile     string
+	cordaNS   string
+	target    string
+	modelfile string
+	pom       string
+	cversion  string
 )
 
 func init() {
 	ContractCmd.AddCommand(generateCmd)
 	generateCmd.PersistentFlags().StringP("target", "t", ".", "Destination path for generated artifacts, if a filename is given (With extension) the generated artifacts will compressed as a zip file with the file name provided")
-	generateCmd.Flags().StringP("state", "", "", "Optional, specify asset name to generate contract state, default to all assets in the specified namespace")
-	generateCmd.Flags().StringP("commands", "", "", "Optional, comma delimited list of transactions(commands) allowed for the selected state txn1,txn2,..., default to all transactions")
 	generateCmd.Flags().StringP("namespace", "", "", "Required, composer model namespace")
 	generateCmd.Flags().StringVarP(&modelfile, "modelfile", "m", "", "Smart contract flow model file")
+	generateCmd.Flags().StringVarP(&pom, "dependency-file", "", "", "dependency xml file")
 
 	generateCmd.MarkFlagRequired("target")
 	generateCmd.MarkFlagRequired("modelfile")
@@ -60,16 +57,6 @@ var generateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		cordaState, err = cmd.Flags().GetString("state")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cordaCommands, err = cmd.Flags().GetString("commands")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 		cordaNS, err = cmd.Flags().GetString("namespace")
 		if err != nil {
 			fmt.Println(err)
@@ -107,15 +94,8 @@ func createCordaGenerator() (contract.Generator, error) {
 	if cordaNS == "" {
 		return nil, fmt.Errorf("namespace is required")
 	}
-	cmds := make([]string, 0)
-	if cordaCommands != "" {
-		cmds = strings.Split(cordaCommands, ",")
-		for i, v := range cmds {
-			cmds[i] = strings.TrimSpace(v)
-		}
-	}
 
-	options := corda.NewOptions(modelfile, cversion, cordaState, cmds, target, cordaNS)
+	options := corda.NewOptions(modelfile, cversion, target, cordaNS, pom)
 	cordaGen := corda.NewGenerator(options)
 	return cordaGen, nil
 }

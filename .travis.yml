@@ -2,5 +2,6 @@
   go:
     - "1.12.9"
   script: 
-    - make depend
-    - make install
+    - echo "Starting build..."
+#    - make depend
+#    - make install

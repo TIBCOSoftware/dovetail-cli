@@ -4,8 +4,8 @@
 * in the license file that is distributed with this file.
  */
 
-// Package commands is the one containing all the cli commands
-package commands
+// Package cmd is the one containing all the cli commands
+package cmd
 
 import (
 	"fmt"

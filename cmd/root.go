@@ -4,26 +4,26 @@
 * in the license file that is distributed with this file.
  */
 
-// Package commands is the one containing all the cli commands
-package commands
+// Package cmd is the one containing all the cli commands
+package cmd
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/TIBCOSoftware/dovetail-cli/commands/corda"
-	"github.com/TIBCOSoftware/dovetail-cli/commands/fabric"
+	"github.com/TIBCOSoftware/dovetail-cli/cmd/corda"
+	"github.com/TIBCOSoftware/dovetail-cli/cmd/fabric"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	RootCmd.AddCommand(versionCmd)
-	RootCmd.AddCommand(fabric.FabricCmd)
-	RootCmd.AddCommand(corda.CordaCmd)
+	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(fabricCmd)
+	rootCmd.AddCommand(cordaCmd)
 }
 
 // RootCmd is the root command for dovetail cli
-var RootCmd = &cobra.Command{
+var rootCmd = &cobra.Command{
 	Use:   "dovetail",
 	Short: "dovetail is a flexible blockchain tool",
 	Long:  `dovetail is a flexible blockchain tool`,

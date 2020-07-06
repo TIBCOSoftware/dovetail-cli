@@ -18,6 +18,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(fabricCmd)
 	rootCmd.AddCommand(cordaCmd)
+	rootCmd.AddCommand(nodeCmd)
 }
 
 // RootCmd is the root command for dovetail cli

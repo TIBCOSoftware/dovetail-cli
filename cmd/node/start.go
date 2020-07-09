@@ -7,14 +7,8 @@
 package node
 
 import (
-	"fmt"
-	"log"
-	"net/http"
-
-	"github.com/TIBCOSoftware/dovetail-cli/config"
-	"github.com/gorilla/mux"
+	int_node "github.com/TIBCOSoftware/dovetail-cli/internal/node"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -28,23 +22,5 @@ var (
 
 // start starts the client service
 func start(cmd *cobra.Command, args []string) {
-	r := mux.NewRouter()
-
-	// GET all releases.
-	r.HandleFunc("/test", TestHandler).Methods("GET")
-
-	nodePort := viper.GetString(config.NODE_PORT_KEY)
-	if config.IsNodeVerbose() {
-		log.Printf("Server listening to port :%s", nodePort)
-	}
-
-	// Bind to a port and pass our router in
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", nodePort), r))
-}
-
-// TestHandler returns a list of all releases for all namespaces
-func TestHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Success"))
+	int_node.Start()
 }

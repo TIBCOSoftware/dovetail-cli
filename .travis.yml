@@ -1,7 +1,7 @@
   language: go
   go:
-    - "1.12.9"
+    - "1.14.4"
   script: 
     - echo "Starting build..."
-#    - make depend
+    - make build
 #    - make install

@@ -12,4 +12,10 @@ const (
 	CORDA = "corda"
 	// SAWTOOTH blockchain name
 	SAWTOOTH = "sawtooth"
+
+	// Node vars
+	NODE_VERBOSE_KEY    = "verbose"
+	NODE_PORT_KEY       = "port"
+	NODE_PORT_SHORT_KEY = "p"
+	NODE_PORT_DEFAULT   = "8080"
 )

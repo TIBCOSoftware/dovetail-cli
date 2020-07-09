@@ -26,7 +26,7 @@ install:
 
 .PHONY: build
 build:
-	go build github.com/TIBCOSoftware/dovetail-cli/cmd/dovetail
+	go build github.com/TIBCOSoftware/dovetail-cli
 
 .PHONY: buildtype
 buildtype: install

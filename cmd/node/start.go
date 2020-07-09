@@ -7,11 +7,14 @@
 package node
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/TIBCOSoftware/dovetail-cli/config"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -30,8 +33,13 @@ func start(cmd *cobra.Command, args []string) {
 	// GET all releases.
 	r.HandleFunc("/test", TestHandler).Methods("GET")
 
+	nodePort := viper.GetString(config.NODE_PORT_KEY)
+	if config.IsNodeVerbose() {
+		log.Printf("Server listening to port :%s", nodePort)
+	}
+
 	// Bind to a port and pass our router in
-	log.Fatal(http.ListenAndServe(":9999", r))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", nodePort), r))
 }
 
 // TestHandler returns a list of all releases for all namespaces

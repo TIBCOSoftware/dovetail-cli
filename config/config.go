@@ -5,7 +5,16 @@
  */
 package config
 
+import (
+	"github.com/spf13/viper"
+)
+
 // Blockchains Returns a list of the supported blockchains
 func Blockchains() []string {
 	return []string{HYPERLEDGER_FABRIC, CORDA}
+}
+
+// IsNodeVerbose returns whether the node log should be verbose
+func IsNodeVerbose() bool {
+	return viper.GetBool(NODE_VERBOSE_KEY)
 }

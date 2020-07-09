@@ -224,11 +224,11 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"resources/kotlin.concept.template": resourcesKotlinConceptTemplate,
-	"resources/kotlin.contract.template": resourcesKotlinContractTemplate,
+	"resources/kotlin.concept.template":      resourcesKotlinConceptTemplate,
+	"resources/kotlin.contract.template":     resourcesKotlinContractTemplate,
 	"resources/kotlin.contractimpl.template": resourcesKotlinContractimplTemplate,
-	"resources/kotlin.pom.xml": resourcesKotlinPomXml,
-	"resources/kotlin.state.template": resourcesKotlinStateTemplate,
+	"resources/kotlin.pom.xml":               resourcesKotlinPomXml,
+	"resources/kotlin.state.template":        resourcesKotlinStateTemplate,
 }
 
 // AssetDir returns the file names below a certain
@@ -270,13 +270,14 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
 	"resources": &bintree{nil, map[string]*bintree{
-		"kotlin.concept.template": &bintree{resourcesKotlinConceptTemplate, map[string]*bintree{}},
-		"kotlin.contract.template": &bintree{resourcesKotlinContractTemplate, map[string]*bintree{}},
+		"kotlin.concept.template":      &bintree{resourcesKotlinConceptTemplate, map[string]*bintree{}},
+		"kotlin.contract.template":     &bintree{resourcesKotlinContractTemplate, map[string]*bintree{}},
 		"kotlin.contractimpl.template": &bintree{resourcesKotlinContractimplTemplate, map[string]*bintree{}},
-		"kotlin.pom.xml": &bintree{resourcesKotlinPomXml, map[string]*bintree{}},
-		"kotlin.state.template": &bintree{resourcesKotlinStateTemplate, map[string]*bintree{}},
+		"kotlin.pom.xml":               &bintree{resourcesKotlinPomXml, map[string]*bintree{}},
+		"kotlin.state.template":        &bintree{resourcesKotlinStateTemplate, map[string]*bintree{}},
 	}},
 }}
 
@@ -326,4 +327,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-

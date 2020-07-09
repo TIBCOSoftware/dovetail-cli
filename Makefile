@@ -5,7 +5,21 @@ PROJECT_FLOGO_CORE_VERSION := v0.9.3
 PROJECT_FLOGO_FLOW_VERSION := v0.9.3
 
 .PHONY: all
-all: install dovetail-tests
+all: default build
+
+default: fmt
+
+# Capture output and force failure when there is non-empty output
+fmt:
+	@echo gofmt -l .
+	@OUTPUT=`gofmt -l . 2>&1`; \
+	if [ "$$OUTPUT" ]; then \
+		echo "gofmt must be run on the following files:"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
+
+
 
 .PHONY: depend
 depend: 

@@ -3,5 +3,4 @@
     - "1.14.4"
   script: 
     - echo "Starting build..."
-    - make build
-#    - make install
+    - make

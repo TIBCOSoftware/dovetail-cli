@@ -1,21 +1,24 @@
 package config
 
 const (
-	// DEFAULT_FOLDER_NAME default name for dovetail folder
-	DEFAULT_FOLDER_NAME = ".dovetail-cli"
+	// DefaultFolderName default name for dovetail folder
+	DefaultFolderName = ".dovetail-cli"
 
 	// Types of supported blockchains
 
-	// HYPERLEDGER_FABRIC blockchain name
-	HYPERLEDGER_FABRIC = "fabric"
-	// CORDA blockchain name
-	CORDA = "corda"
-	// SAWTOOTH blockchain name
-	SAWTOOTH = "sawtooth"
+	// HyperledgerFabric blockchain name
+	HyperledgerFabric = "fabric"
+	// Corda blockchain name
+	Corda = "corda"
+	// Sawtooth blockchain name
+	Sawtooth = "sawtooth"
 
-	// Node vars
-	NODE_VERBOSE_KEY    = "verbose"
-	NODE_PORT_KEY       = "port"
-	NODE_PORT_SHORT_KEY = "p"
-	NODE_PORT_DEFAULT   = "8080"
+	// NodeVerboseKey is the viper key for node verbose
+	NodeVerboseKey = "verbose"
+	// NodePortKey is the viper key for node port
+	NodePortKey = "port"
+	// NodePortShortKey is the viper key for node port short
+	NodePortShortKey = "p"
+	// NodePortDefault is the default value for the node port
+	NodePortDefault = "8080"
 )

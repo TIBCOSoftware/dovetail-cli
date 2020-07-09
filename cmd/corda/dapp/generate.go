@@ -4,7 +4,7 @@
  * in the license file that is distributed with this file.
  */
 
-// Package contract is the one containing all the cli commands for contract operations
+// Package dapp is the one containing all the cli commands for contract operations
 package dapp
 
 import (
@@ -101,7 +101,7 @@ var generateCmd = &cobra.Command{
 func GetGenerators(blockchain string) ([]contract.Generator, error) {
 	generators := make([]contract.Generator, 0)
 	switch strings.ToUpper(blockchain) {
-	case strings.ToUpper(config.CORDA):
+	case strings.ToUpper(config.Corda):
 		g, err := createCordAppGenerator()
 		if err != nil {
 			return nil, err

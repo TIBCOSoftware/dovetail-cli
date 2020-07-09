@@ -4,7 +4,7 @@
 * in the license file that is distributed with this file.
  */
 
-// Package dapp is the one containing all the cli commands for dapp operations
+// Package client is the one containing all the cli commands for dapp operations
 package client
 
 import (

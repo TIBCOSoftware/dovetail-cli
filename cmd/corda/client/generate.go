@@ -4,7 +4,7 @@
  * in the license file that is distributed with this file.
  */
 
-// Package contract is the one containing all the cli commands for contract operations
+// Package client is the one containing all the cli commands for contract operations
 package client
 
 import (

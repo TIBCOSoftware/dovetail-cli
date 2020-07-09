@@ -23,7 +23,7 @@ func Start() {
 	// GET all releases.
 	r.HandleFunc("/test", TestHandler).Methods("GET")
 
-	nodePort := viper.GetString(config.NODE_PORT_KEY)
+	nodePort := viper.GetString(config.NodePortKey)
 	if config.IsNodeVerbose() {
 		log.Printf("Server listening to port :%s", nodePort)
 	}

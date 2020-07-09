@@ -7,7 +7,7 @@ PROJECT_FLOGO_FLOW_VERSION := v0.9.3
 .PHONY: all
 all: default build
 
-default: fmt
+default: fmt vet 
 
 # Capture output and force failure when there is non-empty output
 fmt:
@@ -19,7 +19,17 @@ fmt:
 		exit 1; \
 	fi
 
+vet: 
+	go vet .
 
+lint:
+	@echo golint ./...
+	@OUTPUT=`command -v golint >/dev/null 2>&1 && golint ./... 2>&1`; \
+	if [ "$$OUTPUT" ]; then \
+		echo "golint errors:"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
 
 .PHONY: depend
 depend: 

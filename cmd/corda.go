@@ -4,7 +4,7 @@
 * in the license file that is distributed with this file.
  */
 
-// Package corda is the one containing all the cli commands for corda operations
+// Package cmd is the one containing all the cli commands for corda operations
 package cmd
 
 import (

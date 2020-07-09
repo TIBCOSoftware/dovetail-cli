@@ -1,8 +1,8 @@
 package support
 
 import (
-	"strings"
 	"reflect"
+	"strings"
 )
 
 func GetRef(contrib interface{}) string {
@@ -23,9 +23,9 @@ type HasRef interface {
 
 // fixes vendored paths
 func fixPkgPathVendoring(pkgPath string) string {
-    const vendor = "/vendor/"
-    if i := strings.LastIndex(pkgPath, vendor); i != -1 {
-        return pkgPath[i+len(vendor):]
-    }
-    return pkgPath
+	const vendor = "/vendor/"
+	if i := strings.LastIndex(pkgPath, vendor); i != -1 {
+		return pkgPath[i+len(vendor):]
+	}
+	return pkgPath
 }

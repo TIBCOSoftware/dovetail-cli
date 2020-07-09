@@ -455,22 +455,22 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"resources/AccessControl.template": resourcesAccesscontrolTemplate,
-	"resources/CashController.template": resourcesCashcontrollerTemplate,
-	"resources/Common.template": resourcesCommonTemplate,
-	"resources/CustomController.template": resourcesCustomcontrollerTemplate,
+	"resources/AccessControl.template":         resourcesAccesscontrolTemplate,
+	"resources/CashController.template":        resourcesCashcontrollerTemplate,
+	"resources/Common.template":                resourcesCommonTemplate,
+	"resources/CustomController.template":      resourcesCustomcontrollerTemplate,
 	"resources/FilterCriteriaBuilder.template": resourcesFiltercriteriabuilderTemplate,
-	"resources/NodeRPCConnection.template": resourcesNoderpcconnectionTemplate,
-	"resources/QueryController.template": resourcesQuerycontrollerTemplate,
-	"resources/SecurityController.template": resourcesSecuritycontrollerTemplate,
-	"resources/Server.template": resourcesServerTemplate,
-	"resources/ServerController.template": resourcesServercontrollerTemplate,
-	"resources/StandardController.template": resourcesStandardcontrollerTemplate,
-	"resources/StatesTracker.template": resourcesStatestrackerTemplate,
-	"resources/SwaggerConfig.template": resourcesSwaggerconfigTemplate,
-	"resources/eftl.template": resourcesEftlTemplate,
-	"resources/kotlin.pom.generic.xml": resourcesKotlinPomGenericXml,
-	"resources/kotlin.pom.xml": resourcesKotlinPomXml,
+	"resources/NodeRPCConnection.template":     resourcesNoderpcconnectionTemplate,
+	"resources/QueryController.template":       resourcesQuerycontrollerTemplate,
+	"resources/SecurityController.template":    resourcesSecuritycontrollerTemplate,
+	"resources/Server.template":                resourcesServerTemplate,
+	"resources/ServerController.template":      resourcesServercontrollerTemplate,
+	"resources/StandardController.template":    resourcesStandardcontrollerTemplate,
+	"resources/StatesTracker.template":         resourcesStatestrackerTemplate,
+	"resources/SwaggerConfig.template":         resourcesSwaggerconfigTemplate,
+	"resources/eftl.template":                  resourcesEftlTemplate,
+	"resources/kotlin.pom.generic.xml":         resourcesKotlinPomGenericXml,
+	"resources/kotlin.pom.xml":                 resourcesKotlinPomXml,
 }
 
 // AssetDir returns the file names below a certain
@@ -512,24 +512,25 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
 	"resources": &bintree{nil, map[string]*bintree{
-		"AccessControl.template": &bintree{resourcesAccesscontrolTemplate, map[string]*bintree{}},
-		"CashController.template": &bintree{resourcesCashcontrollerTemplate, map[string]*bintree{}},
-		"Common.template": &bintree{resourcesCommonTemplate, map[string]*bintree{}},
-		"CustomController.template": &bintree{resourcesCustomcontrollerTemplate, map[string]*bintree{}},
+		"AccessControl.template":         &bintree{resourcesAccesscontrolTemplate, map[string]*bintree{}},
+		"CashController.template":        &bintree{resourcesCashcontrollerTemplate, map[string]*bintree{}},
+		"Common.template":                &bintree{resourcesCommonTemplate, map[string]*bintree{}},
+		"CustomController.template":      &bintree{resourcesCustomcontrollerTemplate, map[string]*bintree{}},
 		"FilterCriteriaBuilder.template": &bintree{resourcesFiltercriteriabuilderTemplate, map[string]*bintree{}},
-		"NodeRPCConnection.template": &bintree{resourcesNoderpcconnectionTemplate, map[string]*bintree{}},
-		"QueryController.template": &bintree{resourcesQuerycontrollerTemplate, map[string]*bintree{}},
-		"SecurityController.template": &bintree{resourcesSecuritycontrollerTemplate, map[string]*bintree{}},
-		"Server.template": &bintree{resourcesServerTemplate, map[string]*bintree{}},
-		"ServerController.template": &bintree{resourcesServercontrollerTemplate, map[string]*bintree{}},
-		"StandardController.template": &bintree{resourcesStandardcontrollerTemplate, map[string]*bintree{}},
-		"StatesTracker.template": &bintree{resourcesStatestrackerTemplate, map[string]*bintree{}},
-		"SwaggerConfig.template": &bintree{resourcesSwaggerconfigTemplate, map[string]*bintree{}},
-		"eftl.template": &bintree{resourcesEftlTemplate, map[string]*bintree{}},
-		"kotlin.pom.generic.xml": &bintree{resourcesKotlinPomGenericXml, map[string]*bintree{}},
-		"kotlin.pom.xml": &bintree{resourcesKotlinPomXml, map[string]*bintree{}},
+		"NodeRPCConnection.template":     &bintree{resourcesNoderpcconnectionTemplate, map[string]*bintree{}},
+		"QueryController.template":       &bintree{resourcesQuerycontrollerTemplate, map[string]*bintree{}},
+		"SecurityController.template":    &bintree{resourcesSecuritycontrollerTemplate, map[string]*bintree{}},
+		"Server.template":                &bintree{resourcesServerTemplate, map[string]*bintree{}},
+		"ServerController.template":      &bintree{resourcesServercontrollerTemplate, map[string]*bintree{}},
+		"StandardController.template":    &bintree{resourcesStandardcontrollerTemplate, map[string]*bintree{}},
+		"StatesTracker.template":         &bintree{resourcesStatestrackerTemplate, map[string]*bintree{}},
+		"SwaggerConfig.template":         &bintree{resourcesSwaggerconfigTemplate, map[string]*bintree{}},
+		"eftl.template":                  &bintree{resourcesEftlTemplate, map[string]*bintree{}},
+		"kotlin.pom.generic.xml":         &bintree{resourcesKotlinPomGenericXml, map[string]*bintree{}},
+		"kotlin.pom.xml":                 &bintree{resourcesKotlinPomXml, map[string]*bintree{}},
 	}},
 }}
 
@@ -579,4 +580,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-

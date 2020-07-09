@@ -26,7 +26,7 @@ var (
 func init() {
 	nodeCmd.AddCommand(node.StartCmd)
 
-	nodeCmd.PersistentFlags().StringVarP(&port, config.NODE_PORT_KEY, config.NODE_PORT_SHORT_KEY, config.NODE_PORT_DEFAULT, "The port that the node is listening to")
-	viper.BindPFlag(config.NODE_PORT_KEY, nodeCmd.PersistentFlags().Lookup(config.NODE_PORT_KEY))
-	viper.SetDefault(config.NODE_PORT_KEY, config.NODE_PORT_DEFAULT)
+	nodeCmd.PersistentFlags().StringVarP(&port, config.NodePortKey, config.NodePortShortKey, config.NodePortDefault, "The port that the node is listening to")
+	viper.BindPFlag(config.NodePortKey, nodeCmd.PersistentFlags().Lookup(config.NodePortKey))
+	viper.SetDefault(config.NodePortKey, config.NodePortDefault)
 }

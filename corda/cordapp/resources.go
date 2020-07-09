@@ -245,12 +245,12 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"resources/abstractflow.template": resourcesAbstractflowTemplate,
-	"resources/app.template": resourcesAppTemplate,
+	"resources/abstractflow.template":       resourcesAbstractflowTemplate,
+	"resources/app.template":                resourcesAppTemplate,
 	"resources/defaultschedulable.template": resourcesDefaultschedulableTemplate,
-	"resources/flow.template": resourcesFlowTemplate,
-	"resources/kotlin.pom.xml": resourcesKotlinPomXml,
-	"resources/schedulable.template": resourcesSchedulableTemplate,
+	"resources/flow.template":               resourcesFlowTemplate,
+	"resources/kotlin.pom.xml":              resourcesKotlinPomXml,
+	"resources/schedulable.template":        resourcesSchedulableTemplate,
 }
 
 // AssetDir returns the file names below a certain
@@ -292,14 +292,15 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
 	"resources": &bintree{nil, map[string]*bintree{
-		"abstractflow.template": &bintree{resourcesAbstractflowTemplate, map[string]*bintree{}},
-		"app.template": &bintree{resourcesAppTemplate, map[string]*bintree{}},
+		"abstractflow.template":       &bintree{resourcesAbstractflowTemplate, map[string]*bintree{}},
+		"app.template":                &bintree{resourcesAppTemplate, map[string]*bintree{}},
 		"defaultschedulable.template": &bintree{resourcesDefaultschedulableTemplate, map[string]*bintree{}},
-		"flow.template": &bintree{resourcesFlowTemplate, map[string]*bintree{}},
-		"kotlin.pom.xml": &bintree{resourcesKotlinPomXml, map[string]*bintree{}},
-		"schedulable.template": &bintree{resourcesSchedulableTemplate, map[string]*bintree{}},
+		"flow.template":               &bintree{resourcesFlowTemplate, map[string]*bintree{}},
+		"kotlin.pom.xml":              &bintree{resourcesKotlinPomXml, map[string]*bintree{}},
+		"schedulable.template":        &bintree{resourcesSchedulableTemplate, map[string]*bintree{}},
 	}},
 }}
 
@@ -349,4 +350,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-

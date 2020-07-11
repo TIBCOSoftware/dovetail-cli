@@ -17,6 +17,7 @@ require (
 	github.com/project-flogo/core v0.9.3
 	github.com/project-flogo/flow v0.9.3
 	github.com/prometheus/client_golang v1.0.0 // indirect
+	github.com/rs/cors v1.7.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.4.0
